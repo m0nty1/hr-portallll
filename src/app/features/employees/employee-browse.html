@@ -1,0 +1,57 @@
+<app-page-header title="استعراض الموظفين" [breadcrumb]="[{ label: 'الموظفين', link: '/employees' }, { label: 'استعراض الموظفين' }]" />
+<main class="flex-1 p-4 md:p-6 flex flex-col gap-5">
+  <app-employee-filters (search)="onSearch($event)" />
+
+  <section class="card shadow-sm overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-4">
+      <p class="text-sm text-gray-600">إجمالي النتائج: <span class="text-brand font-bold text-base">{{ list.total() }}</span> موظف</p>
+      <div class="flex items-center gap-2">
+        <button type="button" class="btn-primary !px-4 !py-2" [disabled]="!edited().size || saving()" (click)="save()">حفظ التعديلات</button>
+        <button type="button" class="btn-outline !px-4 !py-2 border-gray-300" [disabled]="!edited().size" (click)="cancel()">إلغاء</button>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full zebra-table">
+        <thead>
+          <tr class="table-head text-sm">
+            <th class="th !px-3">كود الموظف <app-icon name="arrow-up-down" [size]="13" class="opacity-60" /></th>
+            @for (c of cols; track c.field) { <th class="th !px-3">{{ c.label }} <app-icon name="arrow-up-down" [size]="13" class="opacity-60" /></th> }
+          </tr>
+        </thead>
+        <tbody>
+          @if (list.loading() || list.error() || !rows().length) {
+            <tr appTableState [cols]="10" [loading]="list.loading()" [error]="list.error()" (retry)="list.load()"></tr>
+          } @else {
+            @for (e of rows(); track $index; let i = $index) {
+              <tr class="border-b border-gray-50" [class.!bg-orange-50]="edited().has(i)">
+                <td class="td !px-3 text-sm text-gray-700 font-medium">{{ e.code }}</td>
+                @for (c of cols; track c.field) {
+                  <td class="td !px-3 text-sm cursor-text whitespace-nowrap" [class]="c.field === 'name' ? 'text-gray-800 font-semibold' : 'text-gray-500'"
+                    (click)="editing.set({ row: i, field: c.field })">
+                    @if (isEditing(i, c.field)) {
+                      @if (c.options) {
+                        <select class="input-sm w-full min-w-24 text-gray-700" autofocus [ngModel]="e[c.field]" (ngModelChange)="update(i, c.field, $event)" (blur)="editing.set(null)" (keyup.enter)="editing.set(null)">
+                          @for (o of c.options; track o) { <option [value]="o">{{ o }}</option> }
+                        </select>
+                      } @else {
+                        <input class="input-sm w-full text-gray-700" [class]="c.field === 'name' ? 'min-w-56' : c.date ? 'min-w-28' : 'min-w-24'" autofocus
+                          [ngModel]="e[c.field]" (ngModelChange)="update(i, c.field, $event)" (blur)="editing.set(null)" (keyup.enter)="editing.set(null)" />
+                      }
+                    } @else {
+                      @switch (c.field) {
+                        @case ('jobStatus') { <app-job-status [status]="e.jobStatus" /> }
+                        @case ('basic') { <span class="font-semibold text-navy">{{ e.basic }} ج.م</span> }
+                        @default { {{ e[c.field] }} }
+                      }
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination [page]="list.page()" (pageChange)="list.go($event)" [pageSize]="list.pageSize()" (pageSizeChange)="list.resize($event)" [total]="list.total()" />
+  </section>
+</main>

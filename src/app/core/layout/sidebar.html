@@ -1,0 +1,113 @@
+<aside
+  (mouseenter)="layout.expanded.set(true)"
+  (mouseleave)="layout.expanded.set(false)"
+  class="fixed right-0 top-0 bottom-0 z-40 flex flex-col bg-navy transition-all duration-300 overflow-hidden translate-x-full md:translate-x-0 no-print"
+  [class]="layout.mobileOpen() ? '!translate-x-0 w-[224px]' : (layout.expanded() ? 'md:w-[224px]' : 'md:w-[68px]')"
+>
+  <!-- Logo -->
+  <div class="shrink-0 overflow-hidden border-b border-navy-light">
+    @if (show()) {
+      <div class="flex items-center gap-3 h-16 px-3.5">
+        <img src="assets/ueedc-logo.png" alt="شعار شركة مصر العليا لتوزيع الكهرباء" class="w-10 h-10 rounded-full bg-white p-0.5 object-contain shrink-0" />
+        <div class="leading-tight whitespace-nowrap overflow-hidden">
+          <p class="text-[10px] text-blue-200 font-medium">وزارة الكهرباء والطاقة المتجددة</p>
+          <p class="text-[10px] text-white font-bold">شركة مصر العليا لتوزيع الكهرباء</p>
+        </div>
+        <button type="button" (click)="layout.closeMobile()" class="mr-auto md:hidden text-blue-300 hover:text-white p-1" aria-label="إغلاق القائمة">
+          <app-icon name="close" [size]="20" />
+        </button>
+      </div>
+    } @else {
+      <div class="flex items-center justify-center h-16">
+        <span class="w-[43px] h-[43px] rounded-[13px] bg-brand text-white flex items-center justify-center shadow-md"><app-icon name="zap" [size]="25" /></span>
+      </div>
+    }
+  </div>
+
+  <div class="hidden md:flex justify-center py-2 border-b border-navy-light shrink-0">
+    <span class="text-blue-300/60 transition-transform duration-300" [style.transform]="show() ? 'rotate(180deg)' : 'none'">
+      <app-icon name="chevron-left" />
+    </span>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 py-2 overflow-y-auto overflow-x-hidden">
+    @for (item of nav; track item.label) {
+      @if (item.type === 'link') {
+        <a
+          [routerLink]="item.to"
+          routerLinkActive="!bg-navy-light !text-white is-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          #rla="routerLinkActive"
+          (click)="layout.closeMobile()"
+          [title]="show() ? '' : item.label"
+          class="w-full flex items-center relative overflow-hidden h-12 text-blue-200 hover:bg-[#253872] hover:text-white transition-colors"
+          [class]="show() ? 'gap-3 px-5' : 'justify-center'"
+        >
+          @if (rla.isActive) { <span class="absolute left-0 top-0 bottom-0 w-1 bg-brand rounded-l"></span> }
+          <app-icon [name]="item.icon" [size]="20" />
+          @if (show()) { <span class="text-sm font-semibold whitespace-nowrap">{{ item.label }}</span> }
+        </a>
+      } @else {
+        <div>
+          <button
+            type="button"
+            (click)="toggle(item.id)"
+            [title]="show() ? '' : item.label"
+            class="w-full flex items-center relative overflow-hidden h-12 transition-colors"
+            [class]="(show() ? 'gap-3 px-5 ' : 'justify-center ') + (isGroupActive(item) ? 'bg-navy-light text-white' : 'text-blue-200 hover:bg-[#253872] hover:text-white')"
+          >
+            @if (isGroupActive(item)) { <span class="absolute left-0 top-0 bottom-0 w-1 bg-brand rounded-l"></span> }
+            <app-icon [name]="item.icon" [size]="20" />
+            @if (show()) {
+              <span class="text-sm font-semibold whitespace-nowrap flex-1 text-right">{{ item.label }}</span>
+              <span class="transition-transform duration-200" [style.transform]="openGroups().has(item.id) ? 'rotate(180deg)' : 'none'">
+                <app-icon name="chevron-down" [size]="14" />
+              </span>
+            }
+          </button>
+          @if (show() && openGroups().has(item.id)) {
+            @for (child of item.children; track child.to) {
+              <a
+                [routerLink]="child.to"
+                routerLinkActive="!text-brand !bg-[#1a2d52]"
+                [routerLinkActiveOptions]="{ exact: true }"
+                #c="routerLinkActive"
+                (click)="layout.closeMobile()"
+                class="w-full flex items-center gap-2.5 min-h-9 py-2 pr-10 pl-5 text-xs font-medium text-blue-300 hover:text-white hover:bg-[#253872] transition-colors relative"
+              >
+                @if (c.isActive) { <span class="absolute left-0 top-0 bottom-0 w-0.5 bg-brand rounded-l"></span> }
+                <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60 shrink-0"></span>
+                <span class="leading-snug">{{ child.label }}</span>
+              </a>
+            }
+          }
+        </div>
+      }
+    }
+  </nav>
+
+  <!-- Logout -->
+  <div class="border-t border-navy-light shrink-0">
+    <button type="button" (click)="auth.logout()" [title]="show() ? '' : 'تسجيل الخروج'"
+      class="w-full flex items-center h-12 text-sm font-semibold text-blue-200 hover:text-white hover:bg-[#253872] transition-colors overflow-hidden"
+      [class]="show() ? 'gap-3 px-5' : 'justify-center'">
+      <app-icon name="logout" [size]="20" />
+      @if (show()) { <span class="whitespace-nowrap">تسجيل الخروج</span> }
+    </button>
+  </div>
+
+  <!-- User card -->
+  <div class="mx-2 mb-3 bg-navy-light rounded-xl p-2.5 flex items-center gap-3 shrink-0 overflow-hidden">
+    <img [src]="auth.user().avatar" [alt]="auth.user().name" class="w-9 h-9 rounded-full object-cover shrink-0" />
+    @if (show()) {
+      <div class="flex-1 min-w-0 flex items-center gap-1">
+        <div class="flex-1 min-w-0">
+          <p class="text-white text-xs font-bold truncate">{{ auth.user().name }}</p>
+          <p class="text-blue-300 text-[10px] truncate">{{ auth.user().role }}</p>
+        </div>
+        <app-icon name="chevron-down" [size]="14" class="text-blue-200" />
+      </div>
+    }
+  </div>
+</aside>

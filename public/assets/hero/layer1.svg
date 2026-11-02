@@ -1,0 +1,21 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="136" height="191.25" viewBox="0 0 136 191.25" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon" opacity="0.1" clip-path="url(#clip0_0_212)">
+<path id="Vector" d="M68 191.25V47.8125" stroke-width="2.39062" stroke="#1E3461"/>
+<path id="Vector_2" d="M39.3125 90.8438H96.6875" stroke-width="2.39062" stroke="#1E3461"/>
+<path id="Vector_3" d="M46.9625 124.312H89.0375" stroke-width="1.9125" stroke="#1E3461"/>
+<path id="Vector_4" d="M39.3125 90.8438L68 47.8125" stroke-width="1.9125" stroke="#1E3461"/>
+<path id="Vector_5" d="M96.6875 90.8438L68 47.8125" stroke-width="1.9125" stroke="#1E3461"/>
+<path id="Vector_6" d="M29.75 191.25L68 124.312" stroke-width="1.43438" stroke="#1E3461"/>
+<path id="Vector_7" d="M106.25 191.25L68 124.312" stroke-width="1.43438" stroke="#1E3461"/>
+<path id="Vector_8" d="M29.75 90.8438H10.625" stroke-width="1.43438" stroke="#1E3461"/>
+<path id="Vector_9" d="M106.25 90.8438H125.375" stroke-width="1.43438" stroke="#1E3461"/>
+<path id="Vector_10" opacity="0.4" d="M10.625 93.7125C12.2094 93.7125 13.4937 92.4281 13.4937 90.8437C13.4937 89.2594 12.2094 87.975 10.625 87.975C9.04063 87.975 7.75625 89.2594 7.75625 90.8437C7.75625 92.4281 9.04063 93.7125 10.625 93.7125Z" fill="#F47920"/>
+<path id="Vector_11" opacity="0.4" d="M125.375 93.7125C126.959 93.7125 128.244 92.4281 128.244 90.8437C128.244 89.2594 126.959 87.975 125.375 87.975C123.791 87.975 122.506 89.2594 122.506 90.8437C122.506 92.4281 123.791 93.7125 125.375 93.7125Z" fill="#F47920"/>
+<path id="Vector_12" opacity="0.5" d="M68 51.6375C70.1125 51.6375 71.825 49.925 71.825 47.8125C71.825 45.7 70.1125 43.9875 68 43.9875C65.8875 43.9875 64.175 45.7 64.175 47.8125C64.175 49.925 65.8875 51.6375 68 51.6375Z" fill="#F47920"/>
+</g>
+<defs>
+<clipPath id="clip0_0_212">
+<rect width="136" height="191.25" fill="white"/>
+</clipPath>
+</defs>
+</svg>

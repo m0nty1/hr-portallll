@@ -1,0 +1,130 @@
+<app-page-header title="الموظفون" [breadcrumb]="[{ label: 'الموظفين', link: '/employees' }, { label: profile()?.name ?? '...' }]" />
+<main class="flex-1 p-[13px] flex flex-col gap-[11px]">
+  @if (view(); as p) {
+    <section class="card p-5">
+      <div class="flex flex-col md:flex-row items-start gap-5">
+        <div class="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center shrink-0 text-gray-400"><app-icon name="user" [size]="40" [strokeWidth]="1.5" /></div>
+        <div class="flex-1 text-right">
+          <h1 class="text-2xl font-black text-navy mb-1">{{ p.name }}</h1>
+          <p class="text-sm text-gray-400 mb-3">{{ p.jobTitle }}</p>
+          <span class="pill font-bold border" [class]="p.active ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'">
+            <span class="w-1.5 h-1.5 rounded-full" [class]="p.active ? 'bg-green-500' : 'bg-red-500'"></span>{{ p.active ? 'نشط' : 'غير نشط' }}
+          </span>
+          @if (editing()) { <p class="text-xs text-brand mt-2">وضع التعديل: الحقول اللي ليها قايمة بتفتح قايمة منسدلة، والكود بيتولّد تلقائي</p> }
+        </div>
+        <div class="flex items-center gap-6 md:mr-auto">
+          <div class="flex gap-2 order-last no-print">
+            @if (editing()) {
+              <button type="button" class="btn-primary" (click)="save()">حفظ التعديلات</button>
+              <button type="button" class="btn-outline" (click)="cancel()">إلغاء</button>
+            } @else {
+              <button type="button" class="btn-outline !border-navy !text-navy" (click)="startEdit()"><app-icon name="edit" [size]="16" /> تعديل البيانات</button>
+            }
+          </div>
+          @for (s of [['رقم الموظف', p.code], ['الرقم القومي', p.nationalId], ['تاريخ الميلاد', p.birthDate]]; track s[0]) {
+            <div class="text-center"><p class="text-xs text-gray-400 mb-0.5">{{ s[0] }}</p><p class="font-bold text-navy">{{ s[1] }}</p></div>
+          }
+        </div>
+      </div>
+
+      <div class="mt-4 mb-2 bg-[#f8fafd] rounded-xl border border-blue-100 px-5 py-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-x-5 gap-y-2">
+          @for (o of entries(p.org); track o[0]) { <ng-container *ngTemplateOutlet="field; context: { $implicit: o, rec: p.org }" /> }
+        </div>
+      </div>
+
+      <div class="flex gap-0 mt-3 border-t border-gray-100 pt-3 overflow-x-auto" role="tablist">
+        @for (t of tabs; track t.key) {
+          <button type="button" role="tab" [attr.aria-selected]="tab() === t.key" (click)="tab.set(t.key)"
+            class="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap"
+            [class]="tab() === t.key ? 'border-brand text-brand' : 'border-transparent text-gray-400 hover:text-gray-600'">
+            <app-icon [name]="t.icon" />{{ t.label }}
+          </button>
+        }
+      </div>
+    </section>
+
+    @switch (tab()) {
+      @case ('personal') {
+        <section class="card p-5">
+          <div class="flex items-center gap-2 mb-4 text-brand"><app-icon name="user" [size]="20" /><h2 class="font-bold text-navy text-base">البيانات الأساسية</h2></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+            @for (o of entries(p.personal); track o[0]) { <ng-container *ngTemplateOutlet="field; context: { $implicit: o, rec: p.personal }" /> }
+          </div>
+        </section>
+        <section class="card p-5">
+          <div class="flex items-center gap-2 mb-4 text-brand"><app-icon name="users" [size]="20" /><h2 class="font-bold text-navy text-base">بيان الأسرة</h2></div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm zebra-table">
+              <thead><tr class="table-head"><th class="th">الاسم</th><th class="th">درجة القرابة</th><th class="th">تاريخ الميلاد</th></tr></thead>
+              <tbody>
+                @for (m of p.family; track m.name) {
+                  <tr class="border-b border-gray-100"><td class="td text-gray-800 font-medium">{{ m.name }}</td><td class="td text-gray-500">{{ m.relation }}</td><td class="td text-gray-500">{{ m.dob }}</td></tr>
+                } @empty { <tr><td colspan="3" class="td text-center text-gray-400">لا يوجد</td></tr> }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+      @case ('job') {
+        <section class="card p-5">
+          <div class="flex items-center gap-2 mb-4 text-brand"><app-icon name="briefcase" [size]="20" /><h2 class="font-bold text-navy text-base">المؤهل الدراسي والخدمة العسكرية</h2></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+            @for (o of entries(p.job); track o[0]) { <ng-container *ngTemplateOutlet="field; context: { $implicit: o, rec: p.job }" /> }
+          </div>
+        </section>
+      }
+      @case ('salary') { <app-salary-variables [data]="editing() ? salaryDraft() : (savedSalary() ?? salary())" [editable]="editing()" /> }
+      @case ('raises') {
+        <section class="card p-5">
+          <div class="flex items-center gap-2 mb-4 text-brand"><app-icon name="trend" [size]="20" /><h2 class="font-bold text-navy text-base">تدرج العلاوات</h2></div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm zebra-table">
+              <thead><tr class="table-head"><th class="th">تاريخ العلاوة</th><th class="th">الأساسي</th><th class="th">قيمة العلاوة</th></tr></thead>
+              <tbody>
+                @for (r of p.raises; track $index) {
+                  @if (editing()) {
+                    <tr class="border-b border-gray-100 row-edit">
+                      <td class="td"><input class="input-sm" [(ngModel)]="r.date" aria-label="تاريخ العلاوة" /></td>
+                      <td class="td"><input class="input-sm" [(ngModel)]="r.base" aria-label="الأساسي" /></td>
+                      <td class="td"><input class="input-sm" [(ngModel)]="r.value" aria-label="قيمة العلاوة" /></td>
+                    </tr>
+                  } @else {
+                    <tr class="border-b border-gray-100"><td class="td text-gray-800 font-medium">{{ r.date }}</td><td class="td text-gray-500">{{ r.base }}</td><td class="td text-gray-500">{{ r.value }}</td></tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    }
+  } @else {
+    <div class="card p-12 text-center text-sm text-gray-400">جاري التحميل...</div>
+  }
+</main>
+
+<ng-template #field let-o let-rec="rec">
+  <div class="flex flex-col gap-1">
+    <p class="text-xs text-gray-400 font-medium">{{ o[0] }}</p>
+    @if (editing() && rec) {
+      @let opts = optionsFor(o[0]);
+      @if (o[0] === 'كود' || o[0] === 'رقم الموظف') {
+        <input class="input !py-2 !bg-gray-100" readonly [value]="o[1]" [attr.aria-label]="o[0]" />
+      } @else if (opts) {
+        <select class="input !py-2 font-bold text-navy" [(ngModel)]="rec[o[0]]" [attr.aria-label]="o[0]">
+          <option value="">اختر...</option>
+          @for (x of opts; track x) { <option>{{ x }}</option> }
+          @if (o[1] && !opts.includes(o[1])) { <option>{{ o[1] }}</option> }
+        </select>
+      } @else {
+        <input class="input !py-2 font-bold text-navy" [(ngModel)]="rec[o[0]]" [attr.aria-label]="o[0]" />
+      }
+    } @else {
+      <div class="flex items-center gap-1.5">
+        @if (dateKeys.has(o[0])) { <app-icon name="calendar" class="text-brand" /> }
+        <p class="text-sm font-bold text-navy">{{ o[1] || '—' }}</p>
+      </div>
+    }
+  </div>
+</ng-template>

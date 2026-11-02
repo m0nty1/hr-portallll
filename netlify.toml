@@ -1,0 +1,6 @@
+[build]
+  command = "npx ng build --configuration demo"
+  publish = "dist/hr-portal/browser"
+
+[build.environment]
+  NODE_VERSION = "22"

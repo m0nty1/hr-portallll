@@ -1,0 +1,46 @@
+<app-page-header title="البحث عن موظف" [breadcrumb]="[{ label: 'الموظفين', link: '/employees' }, { label: 'البحث عن موظف' }]" />
+<main class="flex-1 p-4 md:p-6 flex flex-col gap-5">
+  <app-employee-filters (search)="onSearch($event)" />
+
+  <section class="card shadow-sm overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-100">
+      <p class="text-sm text-gray-600">إجمالي النتائج: <span class="text-brand font-bold text-base">{{ list.total() }}</span> موظف</p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full zebra-table">
+        <thead>
+          <tr class="table-head text-sm">
+            @for (c of cols; track c) { <th class="th !px-3">{{ c }} <app-icon name="arrow-up-down" [size]="13" class="opacity-60" /></th> }
+            <th class="th !px-3 !text-center">عرض</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (list.loading() || list.error() || !list.rows().length) {
+            <tr appTableState [cols]="11" [loading]="list.loading()" [error]="list.error()" (retry)="list.load()" emptyText="لا يوجد موظفين مطابقين للبحث"></tr>
+          } @else {
+            @for (e of list.rows(); track e.code) {
+              <tr class="border-b border-gray-50 text-sm">
+                <td class="td !px-3 text-gray-700 font-medium">{{ e.code }}</td>
+                <td class="td !px-3 text-gray-800 font-semibold whitespace-nowrap">{{ e.name }}</td>
+                <td class="td !px-3"><app-job-status [status]="e.jobStatus" /></td>
+                <td class="td !px-3 text-gray-600">{{ e.appointType }}</td>
+                <td class="td !px-3 text-gray-500">{{ e.appointDate }}</td>
+                <td class="td !px-3 text-gray-600">{{ e.grade }}</td>
+                <td class="td !px-3 text-gray-500">{{ e.gradeDate }}</td>
+                <td class="td !px-3 text-gray-500">{{ e.bank }}</td>
+                <td class="td !px-3 font-semibold text-navy whitespace-nowrap">{{ e.basic }} ج.م</td>
+                <td class="td !px-3 text-gray-500">{{ e.birthDate }}</td>
+                <td class="td !px-3 text-center">
+                  <a [routerLink]="['/employees', e.code]" class="w-7 h-7 rounded-full border border-brand text-brand flex items-center justify-center mx-auto hover:bg-orange-50" [attr.aria-label]="'عرض ملف ' + e.name">
+                    <app-icon name="eye" />
+                  </a>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination [page]="list.page()" (pageChange)="list.go($event)" [pageSize]="list.pageSize()" (pageSizeChange)="list.resize($event)" [total]="list.total()" />
+  </section>
+</main>

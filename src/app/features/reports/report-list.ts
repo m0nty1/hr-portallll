@@ -1,0 +1,72 @@
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../core/api/api.service';
+import { Icon } from '../../shared/ui/icon';
+import { PageHeader } from '../../shared/ui/page-header';
+import { ToastService } from '../../shared/ui/toast';
+
+export interface ReportDef { id: string; name: string; }
+const PENDING = 'اسم التقرير – في انتظار القايمة من العميل';
+/** Mock catalogs. The real list comes from the DB: GET /reports/catalog?category=salaries|disbursements|hr */
+const MOCK: Record<string, string[]> = {
+  salaries: ['كشف المرتبات الشهري', 'مفردات مرتب موظف', 'تقرير الاستحقاقات والاستقطاعات', 'تقرير العلاوات الدورية', 'تقرير صرفيات الإدارات',
+    'تقرير الأقساط والسلف', 'ملخص المرتبات حسب نوع التعيين', 'تقرير التأمينات الاجتماعية', 'تقرير ضريبة كسب العمل'],
+  disbursements: [PENDING, PENDING, PENDING],
+  hr: [PENDING, PENDING, PENDING],
+};
+
+/** Screens 34a/34b/34c – dynamic report lists (/reports/salaries | disbursements | hr). Route data: { category, title }. */
+@Component({
+  selector: 'app-report-list',
+  imports: [PageHeader, Icon, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <app-page-header [title]="title()" [breadcrumb]="[{ label: 'التقارير', link: '/reports' }, { label: title() }]" />
+    <main class="p-[13px]">
+      <section class="card">
+        <div class="p-[13px]">
+          <label class="relative block">
+            <app-icon name="search" [size]="16" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input class="input !pr-9" placeholder="ابحث باسم التقرير..." [ngModel]="q()" (ngModelChange)="q.set($event)" />
+          </label>
+        </div>
+        <ul class="zebra-list">
+          @for (r of view(); track r.id) {
+            <li>
+              <button type="button" class="w-full flex items-center gap-3 px-5 py-3 text-sm text-right hover:bg-orange-50/60 transition-colors" (click)="open(r)">
+                <span class="w-7 h-7 rounded-md bg-orange-100 text-brand flex items-center justify-center shrink-0"><app-icon name="file" [size]="15" /></span>
+                <span class="flex-1 text-gray-800">{{ r.name }}</span>
+                <span class="icon-btn border-gray-200 text-gray-600"><app-icon name="chevron-left" [size]="14" /></span>
+              </button>
+            </li>
+          } @empty {
+            <li class="py-10 text-center text-sm text-gray-400">{{ loading() ? 'جاري التحميل...' : 'لا توجد تقارير مطابقة' }}</li>
+          }
+        </ul>
+        <p class="px-5 py-3 text-xs text-gray-500">عدد التقارير: {{ view().length }}</p>
+      </section>
+    </main>
+  `,
+  styles: `.zebra-list li:nth-child(even) { background: #e6edf6; }`,
+})
+export class ReportList {
+  readonly category = input<'salaries' | 'disbursements' | 'hr'>('salaries');
+  readonly title = input('التقارير');
+  private readonly api = inject(ApiService);
+  private readonly toast = inject(ToastService);
+  protected readonly reports = signal<ReportDef[]>([]);
+  protected readonly loading = signal(false);
+  protected readonly q = signal('');
+  protected readonly view = computed(() => this.reports().filter((r) => r.name.includes(this.q().trim())));
+
+  constructor() {
+    effect(() => {
+      const c = this.category();
+      this.loading.set(true);
+      this.api.get<ReportDef[]>('/reports/catalog', { category: c }, () => MOCK[c].map((name, i) => ({ id: `${c}-${i + 1}`, name })))
+        .subscribe((r) => { this.reports.set(r); this.loading.set(false); });
+    });
+  }
+  /** Opens the report viewer: GET /reports/{id}/run (PDF). */
+  open(r: ReportDef) { this.toast.success(`جاري فتح: ${r.name}`); }
+}

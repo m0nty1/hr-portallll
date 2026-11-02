@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Cairo', sans-serif;
+  --color-navy: #1e3461;
+  --color-navy-dark: #182d55;
+  --color-navy-light: #273d6e;
+  --color-navy-deep: #1a2b4a;
+  --color-brand: #f47920;
+  --color-brand-dark: #d96510;
+  --color-page: #d3ddea;
+  --color-line: #c3cede;
+  --color-edit: #ffe0bd;
+}
+
+html, body {
+  direction: rtl;
+  background: var(--color-page);
+  font-size: 17px;
+  font-family: 'Cairo', sans-serif;
+}
+
+/* Zebra-stripe tables */
+.zebra-table tbody tr:nth-child(even) { background-color: #e6edf6; }
+.zebra-table tbody tr:hover { background-color: #fff7ed80 !important; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c1c9d4; border-radius: 2px; }
+
+select { appearance: none; -webkit-appearance: none; }
+input, select, textarea { outline: none; font-family: inherit; }
+
+/* Shared building blocks (keep markup short in templates) */
+/* Shared building blocks */
+@utility card-plain { @apply bg-white rounded-[17px] border border-line overflow-hidden; }
+@utility card { @apply card-plain border-t-4 border-t-brand; }
+@utility field-label { @apply text-xs text-gray-500 font-semibold; }
+@utility input { @apply w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-white focus:border-orange-300 transition-colors; }
+@utility input-sm { @apply border border-orange-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-orange-400 focus:ring-1 focus:ring-orange-200; }
+@utility btn { @apply inline-flex items-center justify-center gap-2 text-sm rounded-lg px-5 py-2.5 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed; }
+@utility btn-primary { @apply btn bg-brand hover:bg-brand-dark text-white font-bold; }
+@utility btn-navy { @apply btn bg-navy hover:bg-navy-light text-white font-bold; }
+@utility btn-outline { @apply btn border border-gray-200 bg-white text-gray-600 font-semibold hover:bg-gray-50; }
+@utility icon-btn { @apply w-7 h-7 rounded-lg border flex items-center justify-center transition-colors; }
+@utility icon-btn-edit { @apply icon-btn border-blue-200 text-blue-500 hover:bg-blue-50; }
+@utility icon-btn-delete { @apply icon-btn border-red-200 text-red-500 hover:bg-red-50; }
+@utility icon-btn-save { @apply icon-btn border-transparent bg-brand text-white hover:bg-brand-dark; }
+@utility icon-btn-cancel { @apply icon-btn border-gray-300 text-gray-500 hover:bg-white; }
+@utility th { @apply px-4 py-3 text-right font-semibold whitespace-nowrap; }
+@utility td { @apply px-4 py-[9px] whitespace-nowrap; }
+@utility row-edit { @apply bg-edit; }
+@utility table-head { @apply bg-navy text-white; }
+@utility pill { @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap; }
+@utility checkbox { @apply w-4 h-4 accent-[#f47920]; }
+
+@media print {
+  .no-print { display: none !important; }
+}
