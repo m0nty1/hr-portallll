@@ -15,7 +15,7 @@
         <div class="flex items-center gap-6 md:mr-auto">
           <div class="flex gap-2 order-last no-print">
             @if (editing()) {
-              <button type="button" class="btn-primary" (click)="save()">حفظ التعديلات</button>
+              <button type="button" class="btn-primary" [disabled]="saving()" (click)="save()">{{ saving() ? 'جاري الحفظ...' : 'حفظ التعديلات' }}</button>
               <button type="button" class="btn-outline" (click)="cancel()">إلغاء</button>
             } @else {
               <button *appCan="'hr.edit'" type="button" class="btn-outline !border-navy !text-navy" (click)="startEdit()"><app-icon name="edit" [size]="16" /> تعديل البيانات</button>
@@ -118,7 +118,7 @@
           @if (o[1] && !opts.includes(o[1])) { <option>{{ o[1] }}</option> }
         </select>
       } @else {
-        <input class="input !py-2 font-bold text-navy" [(ngModel)]="rec[o[0]]" [attr.aria-label]="o[0]" />
+        <input class="input !py-2 font-bold text-navy" [type]="dateKeys.has(o[0]) && o[1] !== '—' ? 'date' : 'text'" [(ngModel)]="rec[o[0]]" [attr.aria-label]="o[0]" />
       }
     } @else {
       <div class="flex items-center gap-1.5">

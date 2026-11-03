@@ -1,5 +1,6 @@
+import { CanDirective } from '../../core/auth/permissions';
 import { ConfirmService } from '../../shared/ui/confirm';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SalaryItemGroup } from '../../shared/data/models';
 import { SalariesService } from '../../shared/data/salaries.service';
@@ -10,7 +11,7 @@ import { ToastService } from '../../shared/ui/toast';
 /** Screen 12 – المجموعات الرئيسية لبنود المرتبات (/salaries/item-groups). Inline add/edit (state S6). */
 @Component({
   selector: 'app-salary-item-groups',
-  imports: [PageHeader, Icon, FormsModule],
+  imports: [CanDirective, PageHeader, Icon, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="المجموعات الرئيسية لبنود المرتبات" [breadcrumb]="[{ label: 'المرتبات' }, { label: 'المجموعات الرئيسية لبنود المرتبات' }]" />
@@ -21,7 +22,7 @@ import { ToastService } from '../../shared/ui/toast';
             <app-icon name="search" [size]="16" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input class="input !pr-9" placeholder="ابحث باسم المجموعة أو كود المجموعة..." [ngModel]="q()" (ngModelChange)="q.set($event); page.set(1)" />
           </label>
-          <button type="button" class="btn-primary" (click)="add()" [disabled]="editing() !== null"><app-icon name="plus" [size]="16" /> إضافة مجموعة جديدة</button>
+          <button *appCan="'salaries.edit'" type="button" class="btn-primary" (click)="add()" [disabled]="editing() !== null"><app-icon name="plus" [size]="16" /> إضافة مجموعة جديدة</button>
         </div>
         <table class="w-full text-sm zebra-table">
           <thead class="table-head"><tr><th class="th w-40">كود المجموعة</th><th class="th">اسم المجموعة</th><th class="th text-center w-32">الإجراءات</th></tr></thead>
@@ -40,8 +41,8 @@ import { ToastService } from '../../shared/ui/toast';
                 <tr>
                   <td class="td font-bold text-navy">{{ g.code }}</td><td class="td">{{ g.name }}</td>
                   <td class="td"><div class="flex justify-center gap-2">
-                    <button type="button" class="icon-btn-delete" (click)="remove(g)" aria-label="حذف"><app-icon name="delete" [size]="16" /></button>
-                    <button type="button" class="icon-btn-edit" (click)="edit(g)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
+                    <button *appCan="'salaries.edit'" type="button" class="icon-btn-delete" (click)="remove(g)" aria-label="حذف"><app-icon name="delete" [size]="16" /></button>
+                    <button *appCan="'salaries.edit'" type="button" class="icon-btn-edit" (click)="edit(g)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
                   </div></td>
                 </tr>
               }
@@ -72,6 +73,8 @@ export class SalaryItemGroups {
   protected readonly size = signal(10);
   protected readonly editing = signal<SalaryItemGroup | null>(null);
   protected readonly filtered = computed(() => this.rows().filter((g) => !this.q() || g.name.includes(this.q()) || g.code.includes(this.q())));
+  /** After a delete, never stay on a page that no longer exists. */
+  private readonly clampPage = effect(() => { const max = Math.max(1, Math.ceil(this.filtered().length / this.size())); if (this.page() > max) this.page.set(max); });
   protected readonly paged = computed(() => this.filtered().slice((this.page() - 1) * this.size(), this.page() * this.size()));
   protected d: SalaryItemGroup = { code: '', name: '' };
   protected isNew = false;

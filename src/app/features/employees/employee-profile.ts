@@ -1,13 +1,13 @@
 import { CanDirective } from '../../core/auth/permissions';
 import { AppDatePipe } from '../../shared/util/date.pipe';
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LookupsService } from '../../shared/data/lookups.service';
 import { EmployeeProfile as Profile, SalaryVariables } from '../../shared/data/models';
 import { ToastService } from '../../shared/ui/toast';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NgTemplateOutlet } from '@angular/common';
-import { switchMap } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { EmployeesService } from '../../shared/data/employees.service';
 import { Icon, IconName } from '../../shared/ui/icon';
 import { PageHeader } from '../../shared/ui/page-header';
@@ -61,10 +61,39 @@ export class EmployeeProfile {
     this.editing.set(true);
   }
   cancel() { this.editing.set(false); }
+  protected readonly saving = signal(false);
+
+  /**
+   * Saves the profile and the salary variables together. Each request reports its own outcome so a
+   * partial failure is never shown as success; the part that failed stays in edit mode to retry.
+   */
   save() {
-    const d = this.draft()!;
-    const sv = this.salaryDraft();
-    if (sv) this.svc.saveSalaryVariables(this.id(), sv).subscribe();
-    this.svc.saveProfile(this.id(), d).subscribe(() => { this.saved.set(d); this.savedSalary.set(this.salaryDraft()); this.editing.set(false); this.toast.success('تم حفظ التعديلات'); });
+    if (this.saving()) return;
+    const id = this.id();
+    const d = structuredClone(this.draft()!);
+    const sv = this.salaryDraft() ? structuredClone(this.salaryDraft()!) : undefined;
+    const ok = <T>(o: Observable<T>) => o.pipe(map(() => true), catchError(() => of(false)));
+    this.saving.set(true);
+    forkJoin({ profile: ok(this.svc.saveProfile(id, d)), salary: sv ? ok(this.svc.saveSalaryVariables(id, sv)) : of(true) }).subscribe((r) => {
+      this.saving.set(false);
+      if (this.id() !== id) return; // user already moved to another employee
+      if (r.profile) this.saved.set(d);
+      if (r.salary && sv) this.savedSalary.set(sv);
+      if (r.profile && r.salary) { this.editing.set(false); this.toast.success('تم حفظ التعديلات'); }
+      else if (r.profile) this.toast.error('اتحفظت البيانات الأساسية، لكن فشل حفظ متغيرات المرتب — راجعها وحاول تاني');
+      else if (r.salary) this.toast.error('اتحفظت متغيرات المرتب، لكن فشل حفظ بيانات الموظف — حاول تاني');
+      else this.toast.error('لم يتم حفظ أي تعديلات، حاول مرة أخرى');
+    });
+  }
+
+  constructor() {
+    // Opening another employee discards any edit state that belonged to the previous one.
+    effect(() => {
+      this.id();
+      untracked(() => {
+        this.editing.set(false); this.draft.set(null); this.saved.set(null);
+        this.salaryDraft.set(undefined); this.savedSalary.set(undefined); this.tab.set('personal');
+      });
+    });
   }
 }

@@ -1,3 +1,4 @@
+import { CanDirective } from '../../core/auth/permissions';
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { LookupsService } from '../../shared/data/lookups.service';
@@ -6,11 +7,12 @@ import { SelectField } from '../../shared/ui/fields';
 import { Icon } from '../../shared/ui/icon';
 import { PageHeader } from '../../shared/ui/page-header';
 import { ToastService } from '../../shared/ui/toast';
+import { ReportsService } from '../../shared/data/reports.service';
 
 /** Screen 21 – إجراءات السنة المالية (/salaries/fiscal). First card has a confirm state (S4); middle card is a counter. */
 @Component({
   selector: 'app-fiscal-year-actions',
-  imports: [PageHeader, SelectField, Icon],
+  imports: [PageHeader, SelectField, Icon, CanDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="إجراءات السنة المالية" [breadcrumb]="[{ label: 'المرتبات' }, { label: 'إجراءات السنة المالية' }]" />
@@ -27,7 +29,7 @@ import { ToastService } from '../../shared/ui/toast';
           <div class="border border-gray-200 rounded-xl p-4 flex flex-col justify-between gap-6 min-h-[100px]">
             @if (!confirming()) {
               <p class="text-sm text-gray-600">منح العلاوة الدورية لجميع الموظفين المستحقين عن العام المالي المحدد.</p>
-              <button type="button" class="btn-primary w-full" (click)="confirming.set(true)"><app-icon name="arrow-up" [size]="16" /> منح العلاوة الدورية لجميع الموظفين</button>
+              <button *appCan="'salaries.approve'" type="button" class="btn-primary w-full" (click)="confirming.set(true)"><app-icon name="arrow-up" [size]="16" /> منح العلاوة الدورية لجميع الموظفين</button>
             } @else {
               <p class="text-sm font-bold text-red-600 flex items-center gap-2"><app-icon name="alert" [size]="16" /> هل أنت متأكد؟ سيتم منح العلاوة لجميع الموظفين المستحقين عن {{ year() }} ولا يمكن التراجع.</p>
               <div class="flex gap-2">
@@ -52,20 +54,21 @@ import { ToastService } from '../../shared/ui/toast';
 export class FiscalYearActions {
   private readonly svc = inject(SalariesService);
   private readonly toast = inject(ToastService);
+  private readonly reports = inject(ReportsService);
   protected readonly lk = toSignal(inject(LookupsService).all$);
   protected readonly year = signal('2026/2027');
   protected readonly count = signal<number | undefined>(undefined);
   protected readonly confirming = signal(false);
   protected readonly busy = signal(false);
 
-  constructor() { effect(() => this.svc.grantedCount(this.year()).subscribe((n) => this.count.set(n))); }
+  constructor() { effect((onCleanup) => { this.count.set(undefined); this.confirming.set(false); const sub = this.svc.grantedCount(this.year()).subscribe((n) => this.count.set(n)); onCleanup(() => sub.unsubscribe()); }); }
   grant() {
     this.busy.set(true);
     this.svc.grantPeriodicRaise(this.year()).subscribe({
-      next: () => { this.busy.set(false); this.confirming.set(false); this.toast.success('تم منح العلاوة الدورية'); this.svc.grantedCount(this.year()).subscribe((n) => this.count.set(n)); },
+      next: () => { this.busy.set(false); this.confirming.set(false); this.toast.success('تم منح العلاوة الدورية'); const y = this.year(); this.svc.grantedCount(y).subscribe((n) => { if (this.year() === y) this.count.set(n); }); },
       error: () => this.busy.set(false),
     });
   }
   /** GET /fiscal-years/:year/periodic-raise/report (PDF) */
-  report() { this.toast.success('جاري تجهيز التقرير...'); }
+  report() { this.reports.open(`/fiscal-years/${encodeURIComponent(this.year())}/periodic-raise/report`, `تقرير العلاوة الدورية ${this.year()}`); }
 }

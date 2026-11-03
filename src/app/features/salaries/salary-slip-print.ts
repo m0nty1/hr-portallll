@@ -31,7 +31,7 @@ const MOCK_SLIP = (employee: string, period: string): Slip => ({
           <app-select-field label="السنة" [options]="lk()?.years ?? ['2026']" [(value)]="year" />
         </div>
         <div class="flex justify-start mt-4">
-          <button type="button" class="btn-primary" (click)="print()"><app-icon name="print" [size]="16" /> طباعة</button>
+          <button type="button" class="btn-primary" [disabled]="loading()" (click)="print()"><app-icon name="print" [size]="16" /> {{ loading() ? 'جاري التحميل...' : 'طباعة' }}</button>
         </div>
       </section>
 
@@ -71,14 +71,23 @@ export class SalarySlipPrint {
   protected readonly month = signal('أكتوبر');
   protected readonly year = signal('2026');
   protected readonly slip = signal<Slip | null>(null);
+  protected readonly loading = signal(false);
 
   /** GET /payroll/slip?employee=&month=&year= then window.print(). */
   print() {
     if (!this.employee()) { this.toast.error('برجاء اختيار الموظف'); return; }
     const q = { employee: this.employee(), month: this.month(), year: this.year() };
-    this.api.get<Slip>('/payroll/slip', q, () => MOCK_SLIP(q.employee, `${q.month} ${q.year}`)).subscribe((s) => {
-      this.slip.set(s);
-      setTimeout(() => window.print(), 50);
+    if (this.loading()) return;
+    this.slip.set(null);
+    this.loading.set(true);
+    this.api.get<Slip>('/payroll/slip', q, () => MOCK_SLIP(q.employee, `${q.month} ${q.year}`)).subscribe({
+      next: (s) => {
+        this.loading.set(false);
+        if (!s || !s.earnings) { this.toast.error('لا توجد مفردات مرتب لهذا الشهر'); return; }
+        this.slip.set(s);
+        setTimeout(() => window.print(), 50);
+      },
+      error: () => this.loading.set(false), // nothing is printed when the slip could not be loaded
     });
   }
 }

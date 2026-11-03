@@ -26,6 +26,11 @@ export class ListState<T> {
   search() { this.page.set(1); this.load(); }
   go(page: number) { this.page.set(page); this.load(); }
   resize(size: number) { this.pageSize.set(size); this.search(); }
+  /** Call after deleting a row: steps back a page if the current one became empty, then reloads. */
+  afterDelete() {
+    if (this.rows().length <= 1 && this.page() > 1) this.page.update((p) => p - 1);
+    this.load();
+  }
 
   load() {
     this.sub?.unsubscribe();

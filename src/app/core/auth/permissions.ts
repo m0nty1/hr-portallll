@@ -2,21 +2,8 @@ import { Directive, TemplateRef, ViewContainerRef, effect, inject, input } from 
 import { CanActivateChildFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
-/**
- * Permission keys the backend returns in `user.permissions` (login response).
- * An empty list means "all allowed" — used by the mock admin and until the backend sends real permissions.
- */
-export const PERMISSIONS = {
-  hrView: 'hr.view',                 // الموظفين، الغياب، الجزاءات، الترقيات (عرض)
-  hrEdit: 'hr.edit',                 // تعديل بيانات الموظفين والجزاءات والترقيات
-  salariesView: 'salaries.view',     // شاشات المرتبات والحوافز (عرض)
-  salariesEdit: 'salaries.edit',     // بنود، تخصيص، كشوف، أقساط
-  salariesCalculate: 'salaries.calculate',
-  salariesApprove: 'salaries.approve', // اعتماد الصرف + منح العلاوة الدورية
-  reportsView: 'reports.view',
-  settingsManage: 'settings.manage',
-} as const;
-export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+export { PERMISSIONS, type Permission } from './permission-keys';
+import type { Permission } from './permission-keys';
 
 /** Which permission each URL area needs (longest prefix wins). */
 const ROUTE_PERMISSIONS: [string, Permission][] = [

@@ -6,7 +6,7 @@
     <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-4">
       <p class="text-sm text-gray-600">إجمالي النتائج: <span class="text-brand font-bold text-base">{{ list.total() }}</span> موظف</p>
       <div class="flex items-center gap-2">
-        <button type="button" class="btn-primary !px-4 !py-2" [disabled]="!edited().size || saving()" (click)="save()">حفظ التعديلات</button>
+        <button *appCan="'hr.edit'" type="button" class="btn-primary !px-4 !py-2" [disabled]="!edited().size || saving()" (click)="save()">حفظ التعديلات</button>
         <button type="button" class="btn-outline !px-4 !py-2 border-gray-300" [disabled]="!edited().size" (click)="cancel()">إلغاء</button>
       </div>
     </div>
@@ -27,7 +27,7 @@
                 <td class="td !px-3 text-sm text-gray-700 font-medium">{{ e.code }}</td>
                 @for (c of cols(); track c.field) {
                   <td class="td !px-3 text-sm cursor-text whitespace-nowrap" [class]="c.field === 'name' ? 'text-gray-800 font-semibold' : 'text-gray-500'"
-                    (click)="editing.set({ row: i, field: c.field })">
+                    (click)="canEdit && editing.set({ row: i, field: c.field })">
                     @if (isEditing(i, c.field)) {
                       @if (c.options) {
                         <select class="input-sm w-full min-w-24 text-gray-700" autofocus [ngModel]="e[c.field]" (ngModelChange)="update(i, c.field, $event)" (blur)="editing.set(null)" (keyup.enter)="editing.set(null)">

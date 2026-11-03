@@ -6,13 +6,14 @@
 ## التشغيل
 ```bash
 npm install
-npx ng serve          # http://localhost:4200  (أي اسم مستخدم/باسورد في وضع الـ mock)
+npx ng serve          # http://localhost:4200  (أي اسم مستخدم/باسورد في وضع الـ mock = مدير ديمو بكل الصلاحيات)
 npx ng build          # production → dist/hr-portal/browser
 ```
 Node 22.12+ و Angular 21 (standalone + signals + zoneless) و Tailwind v4 و lucide-angular.
 
 ## الربط بالـ Backend
-- `src/environments/environment*.ts`: `apiUrl` و `useMock`.
+- `environment.ts` (تطوير) و `environment.demo.ts` (الديمو): `useMock: true`.
+- `environment.prod.ts` (النسخة الحقيقية): `useMock: false` وبتكلّم الـ API على `apiUrl`.
 - طول ما `useMock: true` كل طلب بيرجع بيانات وهمية من `shared/data/mock-data.ts` (بتأخير 350ms).
 - لما الـ APIs تجهز: `useMock: false` و `apiUrl` على السيرفر — مفيش أي تغيير تاني في الشاشات.
 - كل الـ endpoints المتوقعة موثقة في **API_CONTRACT.md** وفي تعليقات الـ services (`src/app/shared/data/*.service.ts`).
@@ -52,7 +53,7 @@ Node 22.12+ و Angular 21 (standalone + signals + zoneless) و Tailwind v4 و lu
 | `/settings?tab=…` | إعدادات المرتبات والحوافز – 9 تابات | 32.01–32.09 |
 
 تابات 31/32 كلها شغالة بكومبوننت واحد (`features/settings/lookup-tabs.page.ts`) والأعمدة متعرفة في
-`lookup-tabs.config.ts` (متولّد من الفريمات) — إضافة تاب جديد = إضافة object.
+`shared/data/lookup-tables.ts` (متولّد من الفريمات) — إضافة تاب جديد = إضافة object.
 
 **Placeholders** (لسه مالهاش تصميم): `/settings/users`, `/settings/permissions`, `/reports/custom|attendance|admin|tax|pension`,
 وأي كارت في شاشة 23 مالوش شاشة → `/settings/<slug>` بيفتح صفحة "قيد التصميم". لما التصميم يوصل: استبدل `stub(...)` في `app.routes.ts`.

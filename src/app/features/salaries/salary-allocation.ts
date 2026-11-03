@@ -1,3 +1,4 @@
+import { CanDirective } from '../../core/auth/permissions';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -13,7 +14,7 @@ import { ToastService } from '../../shared/ui/toast';
  */
 @Component({
   selector: 'app-salary-allocation',
-  imports: [PageHeader, Icon, FormsModule],
+  imports: [CanDirective, PageHeader, Icon, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="تخصيص بنود المرتبات للموظفين" [breadcrumb]="[{ label: 'المرتبات' }, { label: 'تخصيص بنود المرتبات للموظفين' }]" />
@@ -29,7 +30,7 @@ import { ToastService } from '../../shared/ui/toast';
           </select>
         </label>
         <button type="button" class="btn-primary" (click)="toast.success('اختر بنداً من الجدول ثم فعّل التخصيص')"><app-icon name="plus" [size]="16" /> إضافة بند</button>
-        <button type="button" class="btn-navy" (click)="save()"><app-icon name="save" [size]="16" /> حفظ التخصيص</button>
+        <button *appCan="'salaries.edit'" type="button" class="btn-navy" [disabled]="saving()" (click)="save()"><app-icon name="save" [size]="16" /> {{ saving() ? 'جاري الحفظ...' : 'حفظ التخصيص' }}</button>
       </section>
       <section class="card">
         <div class="overflow-x-auto">
@@ -100,10 +101,24 @@ export class SalaryAllocation {
   protected readonly editing = signal<string | null>(null);
   protected d = {} as EmployeeItem;
 
-  constructor() { effect(() => { const e = this.employee(); if (e) this.svc.employeeItems(e).subscribe((r) => this.items.set(r)); }); }
+  constructor() { effect((onCleanup) => {
+      const e = this.employee();
+      this.items.set([]); this.editing.set(null);
+      if (!e) return;
+      const sub = this.svc.employeeItems(e).subscribe((r) => this.items.set(r));
+      onCleanup(() => sub.unsubscribe()); // latest employee wins
+    }); }
   patch(r: EmployeeItem, p: Partial<EmployeeItem>) { this.items.update((is) => is.map((i) => (i.code === r.code ? { ...i, ...p } : i))); }
   allocateAll(on: boolean) { const codes = new Set(this.view().map((v) => v.code)); this.items.update((is) => is.map((i) => (codes.has(i.code) ? { ...i, allocated: on, active: on && i.active } : i))); }
   edit(r: EmployeeItem) { this.d = { ...r }; this.editing.set(r.code); }
   confirm(r: EmployeeItem) { this.patch(r, { calculation: this.d.calculation, value: this.d.value }); this.editing.set(null); }
-  save() { this.svc.saveEmployeeItems(this.employee(), this.items()).subscribe(() => this.toast.success('تم حفظ التخصيص')); }
+  protected readonly saving = signal(false);
+  save() {
+    if (this.saving() || !this.employee()) return;
+    this.saving.set(true);
+    this.svc.saveEmployeeItems(this.employee(), structuredClone(this.items())).subscribe({
+      next: () => { this.saving.set(false); this.toast.success('تم حفظ التخصيص'); },
+      error: () => this.saving.set(false),
+    });
+  }
 }

@@ -42,7 +42,7 @@ export interface IncentiveLine { name: string; basic: string; abstract: string; 
 export interface IncentiveSheetDetails { serial: string; date: string; department: string; payType: string; ratio: string; totalEntitled: string; totalNet: string; notes: string; lines: IncentiveLine[]; }
 export interface NonStaffDisbursement { id: number; type: string; dept: string; date: string; employees: number; total: string; notes: string; ratio: string; }
 export interface NonStaffLine { code: string; name: string; dept: string; basic: string; incentive: string; deductions: string; net: string; }
-export interface PayrollSummary { calculated: number; totalEntitlements: string; totalDeductions: string; totalNet: string; notCalculated: number; }
+export interface PayrollSummary { calculationId: string; request?: Record<string, string>; calculated: number; totalEntitlements: string; totalDeductions: string; totalNet: string; notCalculated: number; }
 export interface EmployeeRate { id: number; name: string; percentage: string; }
 
 export interface Bank { name: string; group: string; }

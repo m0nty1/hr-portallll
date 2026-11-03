@@ -1,5 +1,6 @@
+import { CanDirective } from '../../core/auth/permissions';
 import { ConfirmService } from '../../shared/ui/confirm';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { LookupsService } from '../../shared/data/lookups.service';
@@ -13,7 +14,7 @@ import { ToastService } from '../../shared/ui/toast';
 /** Screen 22 – تحديد نسبة العلاوة الدورية (/salaries/periodic-raise). Name filter + inline add (S7), navy pagination. */
 @Component({
   selector: 'app-periodic-raise-rates',
-  imports: [PageHeader, SelectField, Icon, FormsModule],
+  imports: [CanDirective, PageHeader, SelectField, Icon, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="تحديد نسبة العلاوة الدورية" [breadcrumb]="[{ label: 'المرتبات' }, { label: 'تحديد نسبة العلاوة الدورية' }]" />
@@ -28,7 +29,7 @@ import { ToastService } from '../../shared/ui/toast';
               <option value="">كل الموظفين</option>@for (r of rows(); track r.id) { <option>{{ r.name }}</option> }
             </select>
           </label>
-          <button type="button" class="btn-primary" [disabled]="editing() !== null" (click)="add()"><app-icon name="plus" [size]="16" /> إضافة موظف</button>
+          <button *appCan="'salaries.edit'" type="button" class="btn-primary" [disabled]="editing() !== null" (click)="add()"><app-icon name="plus" [size]="16" /> إضافة موظف</button>
         </div>
         <table class="w-full text-sm zebra-table">
           <thead class="table-head"><tr><th class="th">اسم الموظف</th><th class="th text-center">نسبة العلاوة الدورية</th><th class="th text-center w-32">إجراءات</th></tr></thead>
@@ -52,8 +53,8 @@ import { ToastService } from '../../shared/ui/toast';
                   <td class="td text-gray-800">{{ r.name }}</td>
                   <td class="td text-center"><span class="inline-block bg-white border border-gray-200 rounded-md px-2.5 py-0.5 text-xs font-bold">{{ r.percentage }}%</span></td>
                   <td class="td"><div class="flex justify-center gap-2">
-                    <button type="button" class="icon-btn-delete" (click)="remove(r)" aria-label="حذف"><app-icon name="delete" [size]="16" /></button>
-                    <button type="button" class="icon-btn-edit" (click)="edit(r)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
+                    <button *appCan="'salaries.edit'" type="button" class="icon-btn-delete" (click)="remove(r)" aria-label="حذف"><app-icon name="delete" [size]="16" /></button>
+                    <button *appCan="'salaries.edit'" type="button" class="icon-btn-edit" (click)="edit(r)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
                   </div></td>
                 </tr>
               }
@@ -84,12 +85,14 @@ export class PeriodicRaiseRates {
   protected readonly page = signal(1);
   protected readonly editing = signal<number | null>(null);
   protected readonly view = computed(() => this.rows().filter((r) => !this.filter() || r.name === this.filter() || r.id === this.editing()));
+  /** After a delete, never stay on a page that no longer exists. */
+  private readonly clampPage = effect(() => { const max = Math.max(1, Math.ceil(this.view().length / 10)); if (this.page() > max) this.page.set(max); });
   protected readonly paged = computed(() => this.view().slice((this.page() - 1) * 10, this.page() * 10));
   protected readonly candidates = computed(() => this.allEmployees().filter((e) => !this.rows().some((r) => r.name === e)));
   protected d: EmployeeRate = { id: 0, name: '', percentage: '' };
   protected isNew = false;
 
-  constructor() { effect(() => this.svc.rates(this.year()).subscribe((r) => this.rows.set(r))); }
+  constructor() { effect((onCleanup) => { const y = this.year(); untracked(() => this.editing.set(null)); const sub = this.svc.rates(y).subscribe((r) => this.rows.set(r)); onCleanup(() => sub.unsubscribe()); }); }
   edit(r: EmployeeRate) { this.isNew = false; this.d = { ...r }; this.editing.set(r.id); }
   add() {
     const r = { id: -Date.now(), name: '', percentage: '10' };

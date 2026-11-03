@@ -1,3 +1,4 @@
+import { CanDirective } from '../../core/auth/permissions';
 import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -17,7 +18,7 @@ import { ListState } from '../../shared/util/list-state';
 /** Screen 08 – بحث عن كشف صرفية حافز (/salaries/incentives). */
 @Component({
   selector: 'app-incentives-search',
-  imports: [AppDatePipe, PageHeader, SelectField, TextField, Icon, Pagination, TableState, RouterLink],
+  imports: [CanDirective, AppDatePipe, PageHeader, SelectField, TextField, Icon, Pagination, TableState, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="بحث عن كشف صرفية حافز" [breadcrumb]="[{ label: 'المرتبات' }, { label: 'كشوف حوافز' }]" />
@@ -37,7 +38,7 @@ import { ListState } from '../../shared/util/list-state';
       </section>
 
       <section class="card p-[13px] flex flex-wrap gap-2 no-print">
-        <a routerLink="/salaries/incentives/new" class="btn-primary"><app-icon name="plus" [size]="16" /> كشف جديد</a>
+        <a *appCan="'salaries.edit'" routerLink="/salaries/incentives/new" class="btn-primary"><app-icon name="plus" [size]="16" /> كشف جديد</a>
         @for (a of actions; track a.label) {
           <button type="button" class="btn-outline" (click)="run(a.label)"><app-icon [name]="a.icon" [size]="16" /> {{ a.label }}</button>
         }

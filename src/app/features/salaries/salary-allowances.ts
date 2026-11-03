@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { debounceTime, map, switchMap } from 'rxjs';
+import { Subscription, debounceTime, map, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { EmployeesService } from '../../shared/data/employees.service';
 import { Employee, SalaryVariables } from '../../shared/data/models';
@@ -63,14 +63,16 @@ export class SalaryAllowances {
   protected readonly matches = toSignal(toObservable(this.q).pipe(
     debounceTime(150), switchMap((q) => this.emp.search({ q, pageSize: 8 })), map((p) => p.items)), { initialValue: [] as Employee[] });
 
+  private varsSub?: Subscription;
   pick(m: Employee) {
     this.q.set(m.name); this.open.set(false);
-    this.selected.set(m.name); this.code.set(m.code); this.dept.set(m.department ?? '');
-    this.emp.salaryVariables(m.code).subscribe((v) => this.vars.set(v));
+    this.selected.set(m.name); this.code.set(m.code); this.dept.set(m.department ?? ''); this.vars.set(undefined);
+    this.varsSub?.unsubscribe();
+    this.varsSub = this.emp.salaryVariables(m.code).subscribe((v) => { if (this.code() === m.code) this.vars.set(v); });
   }
   search() {
     const first = this.matches()[0];
     if (first) this.pick(first); else this.open.set(true);
   }
-  reset() { this.q.set(''); this.selected.set(''); this.open.set(false); }
+  reset() { this.q.set(''); this.selected.set(''); this.code.set(''); this.dept.set(''); this.vars.set(undefined); this.open.set(false); }
 }

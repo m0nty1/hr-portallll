@@ -1,7 +1,9 @@
+import { CanDirective } from '../../core/auth/permissions';
 import { fmt, num } from '../../shared/util/num';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { LookupsService } from '../../shared/data/lookups.service';
 import { IncentiveLine, IncentiveSheetDetails } from '../../shared/data/models';
 import { SalariesService } from '../../shared/data/salaries.service';
@@ -15,7 +17,7 @@ const blankLine = (): IncentiveLine => ({ name: '', basic: '0.00', abstract: '0.
 /** Screens 09 (تفاصيل الصرفية) and 09b (كشف جديد, id = "new") – /salaries/incentives/:id. */
 @Component({
   selector: 'app-incentive-details',
-  imports: [PageHeader, Icon, FormsModule],
+  imports: [PageHeader, Icon, FormsModule, CanDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header [title]="isNew() ? 'كشف جديد' : 'تفاصيل الصرفية'" backTo="/salaries/incentives"
@@ -56,10 +58,10 @@ const blankLine = (): IncentiveLine => ({ name: '', basic: '0.00', abstract: '0.
       <!-- Actions -->
       <section class="flex flex-wrap gap-2 no-print">
         @for (a of actions; track a.key) {
-          <button type="button" class="btn-outline !bg-white" (click)="action(a.key, a.label)"><app-icon [name]="a.icon" [size]="16" /> {{ a.label }}</button>
+          <button type="button" class="btn-outline !bg-white" [disabled]="busy()" (click)="action(a.key, a.label)"><app-icon [name]="a.icon" [size]="16" /> {{ a.label }}</button>
         }
         <button type="button" class="btn-primary" (click)="addLine()"><app-icon name="plus" [size]="16" /> إضافة موظف</button>
-        <button type="button" class="btn-navy" (click)="saveSheet()"><app-icon name="save" [size]="16" /> حفظ الكشف</button>
+        <button *appCan="'salaries.edit'" type="button" class="btn-navy" [disabled]="busy()" (click)="saveSheet()"><app-icon name="save" [size]="16" /> {{ busy() ? 'جاري الحفظ...' : 'حفظ الكشف' }}</button>
       </section>
 
       <!-- Lines -->
@@ -137,6 +139,8 @@ export class IncentiveDetails {
   private readonly toast = inject(ToastService);
   protected readonly lk = toSignal(inject(LookupsService).all$);
   protected readonly isNew = computed(() => this.id() === 'new');
+  protected readonly busy = signal(false);
+  private readonly router = inject(Router);
   protected readonly s = signal<IncentiveSheetDetails>(structuredClone(EMPTY));
   protected readonly tab = signal(0);
   protected readonly page = signal(1);
@@ -161,9 +165,11 @@ export class IncentiveDetails {
   });
 
   constructor() {
-    effect(() => {
+    effect((onCleanup) => {
+      this.editIdx.set(null);
       if (this.isNew()) { this.s.set(structuredClone(EMPTY)); return; }
-      this.svc.incentiveSheet(this.id()).subscribe((d) => this.s.set(d));
+      const sub = this.svc.incentiveSheet(this.id()).subscribe((d) => this.s.set(d));
+      onCleanup(() => sub.unsubscribe());
     });
   }
 
@@ -187,10 +193,35 @@ export class IncentiveDetails {
     this.editIdx.set(null);
   }
   protected removeLine(l: IncentiveLine) { this.s.update((s) => ({ ...s, lines: s.lines.filter((x) => x !== l) })); }
+  /** Server-side actions on a saved sheet; the sheet is reloaded afterwards so the table shows the result. */
   protected action(key: string, label: string) {
-    this.svc.incentiveAction(this.id(), key).subscribe(() => this.toast.success(`تم: ${label}`));
+    if (this.isNew()) { this.toast.error('احفظ الكشف أولاً قبل تحميل الموظفين'); return; }
+    if (this.busy()) return;
+    this.busy.set(true);
+    this.svc.incentiveAction(this.id(), key).subscribe({
+      next: () => this.svc.incentiveSheet(this.id()).subscribe({
+        next: (d) => { this.s.set(d); this.busy.set(false); this.toast.success(`تم: ${label}`); },
+        error: () => this.busy.set(false),
+      }),
+      error: () => this.busy.set(false),
+    });
   }
+  /** New sheet → POST /incentives then go to its URL; existing → PUT /incentives/:id. */
   protected saveSheet() {
-    this.svc.saveIncentiveSheet(this.id(), this.s()).subscribe(() => this.toast.success('تم حفظ الكشف'));
+    if (this.busy()) return;
+    const body = structuredClone(this.s());
+    if (!body.date || !body.department || !body.payType) { this.toast.error('برجاء إدخال التاريخ والإدارة ونوع الصرف'); return; }
+    this.busy.set(true);
+    if (this.isNew()) {
+      this.svc.createIncentiveSheet(body).subscribe({
+        next: (r) => { this.busy.set(false); this.toast.success('تم إنشاء الكشف'); this.router.navigate(['/salaries/incentives', r.id], { replaceUrl: true }); },
+        error: () => this.busy.set(false),
+      });
+    } else {
+      this.svc.saveIncentiveSheet(this.id(), body).subscribe({
+        next: () => { this.busy.set(false); this.toast.success('تم حفظ الكشف'); },
+        error: () => this.busy.set(false),
+      });
+    }
   }
 }

@@ -1,5 +1,6 @@
+import { CanDirective } from '../../core/auth/permissions';
 import { ConfirmService } from '../../shared/ui/confirm';
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -14,14 +15,14 @@ import { ItemTypePill } from './item-type-pill';
 /** Screen 11 – بنود المرتبات (/salaries/items). Inline add/edit (state S5); list icon opens /salaries/items/:code when hasDetails. */
 @Component({
   selector: 'app-salary-items',
-  imports: [PageHeader, SelectField, Icon, FormsModule, RouterLink, ItemTypePill],
+  imports: [CanDirective, PageHeader, SelectField, Icon, FormsModule, RouterLink, ItemTypePill],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="بنود المرتبات" [breadcrumb]="[{ label: 'المرتبات' }, { label: 'بنود المرتبات' }]" />
     <main class="p-[13px] flex flex-col gap-[11px]">
       <section class="card p-[17px] flex flex-col sm:flex-row items-end gap-3">
         <app-select-field class="flex-1 w-full" label="المجموعة الرئيسية للبنود" [options]="groupNames()" [(value)]="group" />
-        <button type="button" class="btn-primary" (click)="add()" [disabled]="editing() !== null"><app-icon name="plus" [size]="16" /> إضافة بند</button>
+        <button *appCan="'salaries.edit'" type="button" class="btn-primary" (click)="add()" [disabled]="editing() !== null"><app-icon name="plus" [size]="16" /> إضافة بند</button>
       </section>
       <section class="card">
         <div class="overflow-x-auto">
@@ -65,8 +66,8 @@ import { ItemTypePill } from './item-type-pill';
                       } @else { <span class="icon-btn border-gray-200 text-gray-300"><app-icon name="list" [size]="15" /></span> }
                     </div></td>
                     <td class="td"><div class="flex justify-center gap-2">
-                      <button type="button" class="icon-btn-edit" (click)="edit(r)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
-                      <button type="button" class="icon-btn-delete" (click)="remove(r)" aria-label="حذف"><app-icon name="delete" [size]="16" /></button>
+                      <button *appCan="'salaries.edit'" type="button" class="icon-btn-edit" (click)="edit(r)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
+                      <button *appCan="'salaries.edit'" type="button" class="icon-btn-delete" (click)="remove(r)" aria-label="حذف"><app-icon name="delete" [size]="16" /></button>
                     </div></td>
                   </tr>
                 }
@@ -95,7 +96,7 @@ export class SalaryItems {
   protected d = {} as SalaryItem;
   private isNew = false;
 
-  constructor() { effect(() => this.svc.items(this.group()).subscribe((r) => this.rows.set(r))); }
+  constructor() { effect((onCleanup) => { const g = this.group(); untracked(() => this.editing.set(null)); const sub = this.svc.items(g).subscribe((r) => this.rows.set(r)); onCleanup(() => sub.unsubscribe()); }); }
 
   edit(r: SalaryItem) { this.isNew = false; this.d = { ...r }; this.editing.set(r.id); }
   add() {
@@ -105,12 +106,35 @@ export class SalaryItems {
     this.isNew = true;
   }
   cancel() { if (this.isNew) this.rows.update((rs) => rs.filter((r) => r.id !== this.editing())); this.editing.set(null); }
+  /** Value must match the calculation method; order is a 1–99 number; codes are unique. */
+  private validate(d: SalaryItem): string | null {
+    if (!d.code.trim() || !d.name.trim()) return 'برجاء إدخال كود واسم البند';
+    if (this.rows().some((r) => r.id !== d.id && r.code.trim() === d.code.trim())) return 'كود البند مستخدم بالفعل';
+    const v = d.value.replace(/,/g, '').trim();
+    if (d.calculation === 'قيمة' && !/^\d+(\.\d+)?$/.test(v)) return 'قيمة البند لازم تكون رقم (مثال: 5000)';
+    if (d.calculation === 'نسبة' && !/^\d+(\.\d+)?%?$/.test(v)) return 'النسبة لازم تكون رقم (مثال: 10%)';
+    if (d.calculation === 'نسبة' && parseFloat(v) > 100) return 'النسبة لا يمكن أن تزيد عن 100%';
+    if (!/^\d{1,2}$/.test(d.order.trim()) || +d.order < 1) return 'الترتيب لازم يكون رقم من 1 إلى 99';
+    return null;
+  }
+  protected readonly saving = signal(false);
   save() {
-    if (!this.d.code.trim() || !this.d.name.trim()) { this.toast.error('برجاء إدخال كود واسم البند'); return; }
-    this.svc.saveItem(this.d).subscribe(() => {
-      this.rows.update((rs) => rs.map((r) => (r.id === this.d.id ? this.d : r)));
-      this.editing.set(null);
-      this.toast.success('تم حفظ البند');
+    if (this.saving()) return;
+    const d: SalaryItem = { ...this.d, value: this.d.calculation === 'حساب' ? 'تلقائي' : this.d.value.trim(), order: this.d.order.trim().padStart(2, '0') };
+    if (d.calculation === 'نسبة' && !d.value.endsWith('%')) d.value += '%';
+    const err = this.validate(d);
+    if (err) { this.toast.error(err); return; }
+    const tempId = d.id, isNew = this.isNew;
+    this.saving.set(true);
+    this.svc.saveItem(d, isNew).subscribe({
+      next: (saved) => {
+        this.rows.update((rs) => rs.map((r) => (r.id === tempId ? { ...d, ...saved } : r)));
+        this.isNew = false;
+        this.editing.set(null);
+        this.saving.set(false);
+        this.toast.success('تم حفظ البند');
+      },
+      error: () => this.saving.set(false),
     });
   }
   async remove(r: SalaryItem) {

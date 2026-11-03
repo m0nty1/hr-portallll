@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '../../core/api/api.service';
 import { Icon } from '../../shared/ui/icon';
 import { PageHeader } from '../../shared/ui/page-header';
-import { ToastService } from '../../shared/ui/toast';
+import { ReportDef, ReportsService } from '../../shared/data/reports.service';
 
-export interface ReportDef { id: string; name: string; }
 const PENDING = 'اسم التقرير – في انتظار القايمة من العميل';
 /** Mock catalogs. The real list comes from the DB: GET /reports/catalog?category=salaries|disbursements|hr */
 const MOCK: Record<string, string[]> = {
@@ -52,21 +50,21 @@ const MOCK: Record<string, string[]> = {
 export class ReportList {
   readonly category = input<'salaries' | 'disbursements' | 'hr'>('salaries');
   readonly title = input('التقارير');
-  private readonly api = inject(ApiService);
-  private readonly toast = inject(ToastService);
+  private readonly reportsSvc = inject(ReportsService);
   protected readonly reports = signal<ReportDef[]>([]);
   protected readonly loading = signal(false);
   protected readonly q = signal('');
   protected readonly view = computed(() => this.reports().filter((r) => r.name.includes(this.q().trim())));
 
   constructor() {
-    effect(() => {
+    effect((onCleanup) => {
       const c = this.category();
       this.loading.set(true);
-      this.api.get<ReportDef[]>('/reports/catalog', { category: c }, () => MOCK[c].map((name, i) => ({ id: `${c}-${i + 1}`, name })))
-        .subscribe((r) => { this.reports.set(r); this.loading.set(false); });
+      const sub = this.reportsSvc.catalog(c, () => MOCK[c].map((name, i) => ({ id: `${c}-${i + 1}`, name })))
+        .subscribe({ next: (r) => { this.reports.set(r); this.loading.set(false); }, error: () => this.loading.set(false) });
+      onCleanup(() => sub.unsubscribe());
     });
   }
   /** Opens the report viewer: GET /reports/{id}/run (PDF). */
-  open(r: ReportDef) { this.toast.success(`جاري فتح: ${r.name}`); }
+  open(r: ReportDef) { this.reportsSvc.open(`/reports/${r.id}/run`, r.name); }
 }

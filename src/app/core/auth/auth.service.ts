@@ -2,19 +2,20 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, delay, tap } from 'rxjs';
 import { ApiService } from '../api/api.service';
+import { ALL_PERMISSIONS } from './permission-keys';
 
 export interface CurrentUser {
   id: string;
   name: string;
   role: string;
   avatar: string;
-  /** Permission keys returned by the backend (e.g. "salaries.calculate"). Empty = all allowed in mock mode. */
+  /** Permission keys returned by the backend (e.g. "salaries.calculate"). Empty = no access. */
   permissions: string[];
 }
 interface LoginResponse { token: string; user: CurrentUser; }
 
-const TOKEN_KEY = 'hr.token';
-const USER_KEY = 'hr.user';
+const TOKEN_KEY = 'hr.token.v2';
+const USER_KEY = 'hr.user.v2';
 const GUEST: CurrentUser = { id: '', name: '', role: '', avatar: 'assets/avatar.png', permissions: [] };
 
 @Injectable({ providedIn: 'root' })
@@ -26,19 +27,17 @@ export class AuthService {
   readonly user = this._user.asReadonly();
   readonly token = signal<string | null>(this.read<string>(TOKEN_KEY));
   readonly isLoggedIn = computed(() => !!this.token());
-  /** True when the user holds the permission. An empty permission list = full access (mock admin). */
+  /** True only when the backend granted the permission. No permissions = no access. */
   can(permission: string): boolean {
-    const p = this.user().permissions ?? [];
-    return p.length === 0 || p.includes(permission);
+    return (this.user().permissions ?? []).includes(permission);
   }
 
   login(username: string, password: string): Observable<LoginResponse> {
+    // Demo/mock only: any non-empty credentials sign in as an explicit demo admin.
+    // With useMock=false the backend decides (ApiService never returns this object).
     const mock: LoginResponse = {
-      token: 'mock-token',
-      user: {
-        id: '1', name: 'أحمد محمد', role: 'مدير النظام', permissions: [],
-        avatar: 'assets/avatar.png',
-      },
+      token: 'demo-token',
+      user: { id: 'demo', name: 'أحمد محمد', role: 'مدير النظام (ديمو)', permissions: [...ALL_PERMISSIONS], avatar: 'assets/avatar.png' },
     };
     return this.api.post<LoginResponse>('/auth/login', { username, password }, mock).pipe(
       delay(0),

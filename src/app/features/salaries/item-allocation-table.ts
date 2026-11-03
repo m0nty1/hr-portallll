@@ -1,3 +1,4 @@
+import { CanDirective } from '../../core/auth/permissions';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -9,7 +10,7 @@ import { ToastService } from '../../shared/ui/toast';
 /** Shared by screens 15 (by appointment type) and 16 (by disbursement type) – "ItemAllocationTable". */
 @Component({
   selector: 'app-item-allocation-table',
-  imports: [PageHeader, Icon, FormsModule],
+  imports: [CanDirective, PageHeader, Icon, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header [title]="title()" [breadcrumb]="[{ label: 'المرتبات' }, { label: title() }]" />
@@ -22,7 +23,7 @@ import { ToastService } from '../../shared/ui/toast';
           <select class="input" [ngModel]="group()" (ngModelChange)="group.set($event)"><option value="">الكل</option>@for (g of groups(); track g) { <option>{{ g }}</option> }</select>
         </label>
         <button type="button" class="btn-primary" (click)="toast.success('حدد البنود من الجدول')"><app-icon name="plus" [size]="16" /> إضافة بند</button>
-        <button type="button" class="btn-navy" (click)="save()"><app-icon name="save" [size]="16" /> حفظ التخصيص</button>
+        <button *appCan="'salaries.edit'" type="button" class="btn-navy" [disabled]="saving()" (click)="save()"><app-icon name="save" [size]="16" /> {{ saving() ? 'جاري الحفظ...' : 'حفظ التخصيص' }}</button>
       </section>
       <section class="card">
         <table class="w-full text-sm zebra-table">
@@ -66,9 +67,17 @@ export class ItemAllocationTable {
 
   constructor() {
     effect(() => { if (!this.key() && this.options().length) this.key.set(this.options()[0]); });
-    effect(() => { const k = this.key(); if (k) this.svc.allocatedCodes(this.kind(), k).subscribe((c) => this.codes.set(new Set(c))); });
+    effect((onCleanup) => { const k = this.key(); if (!k) return; const sub = this.svc.allocatedCodes(this.kind(), k).subscribe((c) => this.codes.set(new Set(c))); onCleanup(() => sub.unsubscribe()); });
   }
   toggle(c: string) { this.codes.update((s) => { const n = new Set(s); n.has(c) ? n.delete(c) : n.add(c); return n; }); }
   toggleAll(on: boolean) { this.codes.update((s) => { const n = new Set(s); this.view().forEach((i) => (on ? n.add(i.code) : n.delete(i.code))); return n; }); }
-  save() { this.svc.saveAllocated(this.kind(), this.key(), [...this.codes()]).subscribe(() => this.toast.success('تم حفظ التخصيص')); }
+  protected readonly saving = signal(false);
+  save() {
+    if (this.saving() || !this.key()) return;
+    this.saving.set(true);
+    this.svc.saveAllocated(this.kind(), this.key(), [...this.codes()]).subscribe({
+      next: () => { this.saving.set(false); this.toast.success('تم حفظ التخصيص'); },
+      error: () => this.saving.set(false),
+    });
+  }
 }

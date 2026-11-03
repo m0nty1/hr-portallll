@@ -1,6 +1,6 @@
 import { ConfirmService } from '../../shared/ui/confirm';
 import { AppDatePipe } from '../../shared/util/date.pipe';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PeriodicAllowanceRow } from '../../shared/data/models';
 import { SettingsService } from '../../shared/data/settings.service';
@@ -75,6 +75,8 @@ export class SettingsPeriodicAllowance {
   protected readonly size = signal(10);
   protected readonly editing = signal<PeriodicAllowanceRow | null>(null);
   protected readonly view = computed(() => this.rows().filter((r) => r.name.includes(this.q().trim())));
+  /** After a delete, never stay on a page that no longer exists. */
+  private readonly clampPage = effect(() => { const max = Math.max(1, Math.ceil(this.view().length / this.size())); if (this.page() > max) this.page.set(max); });
   protected readonly paged = computed(() => this.view().slice((this.page() - 1) * this.size(), this.page() * this.size()));
   protected from = '2026-06-30';
   protected to = '2026-06-30';

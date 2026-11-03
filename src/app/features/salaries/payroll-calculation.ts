@@ -1,6 +1,6 @@
 import { CanDirective } from '../../core/auth/permissions';
 import { ConfirmService } from '../../shared/ui/confirm';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { LookupsService } from '../../shared/data/lookups.service';
 import { PayrollSummary } from '../../shared/data/models';
@@ -43,7 +43,7 @@ type Scope = 'appointType' | 'department' | 'employee';
         </div>
         <div class="flex gap-2 border-t border-gray-100 mt-4 pt-4">
           <button type="button" class="btn-primary" [disabled]="busy()" (click)="calc()"><app-icon name="calculator" [size]="16" /> {{ busy() ? 'جاري الحساب...' : 'حساب المرتبات' }}</button>
-          <button *appCan="'salaries.approve'" type="button" class="btn-navy" [disabled]="!summary()" (click)="approve()"><app-icon name="check" [size]="16" /> اعتماد الصرف</button>
+          <button *appCan="'salaries.approve'" type="button" class="btn-navy" [disabled]="!summary() || approving() || approved()" (click)="approve()"><app-icon name="check" [size]="16" /> {{ approved() ? 'تم الاعتماد' : approving() ? 'جاري الاعتماد...' : 'اعتماد الصرف' }}</button>
         </div>
       </section>
 
@@ -72,6 +72,8 @@ export class PayrollCalculation {
   protected readonly month = signal('أكتوبر');
   protected readonly year = signal('2026');
   protected readonly busy = signal(false);
+  protected readonly approving = signal(false);
+  protected readonly approved = signal(false);
   protected readonly summary = signal<PayrollSummary | null>(null);
   protected readonly cards = computed(() => {
     const s = this.summary();
@@ -92,6 +94,12 @@ export class PayrollCalculation {
       if (!l.appointTypes.includes(this.appointType())) this.appointType.set(l.appointTypes[0] ?? '');
       if (!l.disbursementTypes.includes(this.disbursement())) this.disbursement.set(l.disbursementTypes[0] ?? '');
     });
+    // Any change to the filters invalidates the last calculation, so "اعتماد الصرف" can never approve
+    // a result that does not match what is on screen.
+    effect(() => {
+      this.body();
+      untracked(() => { this.summary.set(null); this.approved.set(false); });
+    });
   }
 
   private body() {
@@ -99,12 +107,25 @@ export class PayrollCalculation {
     return { scope: this.scope(), target, disbursement: this.disbursement(), month: this.month(), year: this.year() };
   }
   calc() {
-    if (!this.body().target) { this.toast.error('برجاء اختيار قيمة للنطاق المحدد'); return; }
+    const req = this.body();
+    if (!req.target) { this.toast.error('برجاء اختيار قيمة للنطاق المحدد'); return; }
     this.busy.set(true);
-    this.svc.calculate(this.body()).subscribe({ next: (s) => { this.summary.set(s); this.busy.set(false); }, error: () => this.busy.set(false) });
+    this.svc.calculate(req).subscribe({
+      next: (s) => { this.summary.set({ ...s, request: req }); this.approved.set(false); this.busy.set(false); },
+      error: () => this.busy.set(false),
+    });
   }
   async approve() {
-    if (!(await this.dialog.ask('تأكيد اعتماد الصرف؟'))) return;
-    this.svc.approve(this.body()).subscribe(() => this.toast.success('تم اعتماد الصرف'));
+    const s = this.summary();
+    if (!s || this.approving() || this.approved()) return;
+    const r = s.request ?? {};
+    const ok = await this.dialog.ask({ title: 'تأكيد اعتماد الصرف', confirmText: 'اعتماد',
+      message: `اعتماد صرف "${r['disbursement']}" لشهر ${r['month']} ${r['year']} — ${r['target']}: ${s.calculated} موظف بصافي ${s.totalNet} ج.م؟` });
+    if (!ok || this.summary()?.calculationId !== s.calculationId) return;
+    this.approving.set(true);
+    this.svc.approve(s.calculationId).subscribe({
+      next: () => { this.approving.set(false); this.approved.set(true); this.toast.success('تم اعتماد الصرف'); },
+      error: () => this.approving.set(false),
+    });
   }
 }

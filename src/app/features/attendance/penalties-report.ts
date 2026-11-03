@@ -1,3 +1,4 @@
+import { CanDirective } from '../../core/auth/permissions';
 import { ConfirmService } from '../../shared/ui/confirm';
 import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
@@ -21,14 +22,14 @@ const COLORS: Record<PenaltyType, string> = {
 /** Screen 04 – الجزاءات والعقوبات (/attendance/penalties). */
 @Component({
   selector: 'app-penalties-report',
-  imports: [AppDatePipe, PageHeader, AttendanceFilters, Pagination, TableState, Icon, FormsModule],
+  imports: [CanDirective, AppDatePipe, PageHeader, AttendanceFilters, Pagination, TableState, Icon, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="الجزاءات والعقوبات" [breadcrumb]="[{ label: 'الحضور والانصراف' }, { label: 'الجزاءات' }]" />
     <main class="p-[13px] flex flex-col gap-[11px]">
       <app-attendance-filters typeLabel="نوع الجزاء" fromLabel="من تاريخ" toLabel="إلى تاريخ" exportLabel="تصدير" [navySearch]="true"
         [types]="types" (search)="onSearch($event)" (exportX)="export()" (print)="print()">
-        <button start type="button" class="btn-primary" (click)="addNew()"><app-icon name="plus" [size]="16" /> إضافة جزاء</button>
+        <button *appCan="'hr.edit'" start type="button" class="btn-primary" [disabled]="editId() !== null" (click)="addNew()"><app-icon name="plus" [size]="16" /> إضافة جزاء</button>
       </app-attendance-filters>
       <section class="card">
         <p class="px-5 py-3 text-sm text-gray-600">إجمالي النتائج: <b class="text-navy">{{ list.total() }}</b> جزاء</p>
@@ -45,14 +46,14 @@ const COLORS: Record<PenaltyType, string> = {
                     <td class="td text-gray-400">{{ i + 1 }}</td>
                     <td class="td"><input class="input-sm w-40" [(ngModel)]="draft.name" aria-label="اسم الموظف" /></td>
                     <td class="td"><select class="input-sm" [(ngModel)]="draft.type" aria-label="نوع الجزاء">@for (t of types; track t) { <option>{{ t }}</option> }</select></td>
-                    <td class="td"><input class="input-sm w-28" [(ngModel)]="draft.penaltyDate" aria-label="تاريخ الجزاء" /></td>
-                    <td class="td"><input class="input-sm w-16 text-center" type="number" [(ngModel)]="draft.days" aria-label="عدد الأيام" /></td>
+                    <td class="td"><input type="date" class="input-sm w-36" [(ngModel)]="draft.penaltyDate" aria-label="تاريخ الجزاء" /></td>
+                    <td class="td"><input class="input-sm w-16 text-center" type="number" min="0" step="1" [(ngModel)]="draft.days" aria-label="عدد الأيام" /></td>
                     <td class="td"><input class="input-sm w-28" [(ngModel)]="draft.decisionNo" aria-label="رقم القرار" /></td>
-                    <td class="td"><input class="input-sm w-28" [(ngModel)]="draft.decisionDate" aria-label="تاريخ القرار" /></td>
+                    <td class="td"><input type="date" class="input-sm w-36" [(ngModel)]="draft.decisionDate" aria-label="تاريخ القرار" /></td>
                     <td class="td"><input class="input-sm w-40" [(ngModel)]="draft.reason" aria-label="السبب" /></td>
                     <td class="td"><div class="flex justify-center gap-2">
-                      <button type="button" class="icon-btn-save" (click)="save()" aria-label="حفظ"><app-icon name="check" [size]="16" /></button>
-                      <button type="button" class="icon-btn-cancel" (click)="editId.set(null)" aria-label="إلغاء"><app-icon name="close" [size]="16" /></button>
+                      <button type="button" class="icon-btn-save" [disabled]="saving()" (click)="save()" aria-label="حفظ"><app-icon name="check" [size]="16" /></button>
+                      <button type="button" class="icon-btn-cancel" (click)="cancel()" aria-label="إلغاء"><app-icon name="close" [size]="16" /></button>
                     </div></td>
                   </tr>
                 } @else {
@@ -66,8 +67,10 @@ const COLORS: Record<PenaltyType, string> = {
                     <td class="td text-gray-500">{{ r.decisionDate | appDate }}</td>
                     <td class="td text-gray-500">{{ r.reason }}</td>
                     <td class="td"><div class="flex justify-center gap-2">
+                      <ng-container *appCan="'hr.edit'">
                       <button type="button" class="icon-btn-edit" (click)="edit(r)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
                       <button type="button" class="icon-btn-delete" (click)="remove(r)" aria-label="حذف"><app-icon name="delete" [size]="16" /></button>
+                      </ng-container>
                     </div></td>
                   </tr>
                 }
@@ -101,18 +104,42 @@ export class PenaltiesReport {
     this.list.rows.update((rs) => [r, ...rs]);
     this.edit(r);
   }
+  /** New rows carry a temporary negative id until the server returns the real one. */
+  private isTemp(id: number) { return id < 0; }
+  protected readonly saving = signal(false);
+  cancel() {
+    const id = this.editId();
+    if (id !== null && this.isTemp(id)) this.list.rows.update((rs) => rs.filter((r) => r.id !== id));
+    this.editId.set(null);
+  }
+  private validate(d: PenaltyRow): string | null {
+    if (!d.name.trim()) return 'برجاء إدخال اسم الموظف';
+    if (!d.penaltyDate) return 'برجاء إدخال تاريخ الجزاء';
+    if (!d.decisionNo.trim() || !d.decisionDate) return 'برجاء إدخال رقم وتاريخ قرار الجزاء';
+    if (d.days < 0 || !Number.isInteger(+d.days)) return 'عدد أيام الجزاء غير صحيح';
+    if (d.decisionDate > d.penaltyDate) return 'تاريخ القرار لا يمكن أن يكون بعد تاريخ الجزاء';
+    return null;
+  }
   save() {
-    const d = this.draft;
-    if (!d.name.trim()) { this.toast.error('برجاء إدخال اسم الموظف'); return; }
-    this.svc.savePenalty(d).subscribe(() => {
-      this.list.rows.update((rs) => rs.map((r) => (r.id === d.id ? d : r)));
-      this.editId.set(null);
-      this.toast.success('تم حفظ الجزاء');
+    if (this.saving()) return;
+    const d = { ...this.draft, days: +this.draft.days };
+    const err = this.validate(d);
+    if (err) { this.toast.error(err); return; }
+    const tempId = d.id;
+    this.saving.set(true);
+    this.svc.savePenalty(d, this.isTemp(tempId)).subscribe({
+      next: (saved) => {
+        this.list.rows.update((rs) => rs.map((r) => (r.id === tempId ? saved : r)));
+        this.editId.set(null);
+        this.saving.set(false);
+        this.toast.success('تم حفظ الجزاء');
+      },
+      error: () => this.saving.set(false),
     });
   }
   async remove(r: PenaltyRow) {
     if (!(await this.dialog.ask(`حذف جزاء ${r.name}؟`))) return;
-    this.svc.deletePenalty(r.id).subscribe(() => { this.list.rows.update((rs) => rs.filter((x) => x !== r)); this.toast.success('تم الحذف'); });
+    this.svc.deletePenalty(r.id).subscribe(() => { this.toast.success('تم الحذف'); this.list.afterDelete(); });
   }
   export() {
     exportCsv('الجزاءات', ['اسم الموظف', 'نوع الجزاء', 'تاريخ الجزاء', 'عدد الأيام', 'رقم القرار', 'تاريخ القرار', 'السبب'],

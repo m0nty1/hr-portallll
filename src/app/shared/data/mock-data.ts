@@ -152,7 +152,7 @@ export const MOCK_NON_STAFF_LINES: NonStaffLine[] = [
   { code: '00082', name: 'سامي إبراهيم محمد علي', dept: 'الإدارة العامة للشئون الفنية', basic: '3000', incentive: '1,144', deductions: '300', net: '844' },
 ];
 
-export const MOCK_PAYROLL_SUMMARY: PayrollSummary = { calculated: 48, totalEntitlements: '312,500', totalDeductions: '42,750', totalNet: '269,750', notCalculated: 7 };
+export const MOCK_PAYROLL_SUMMARY: PayrollSummary = { calculationId: 'calc-demo', calculated: 48, totalEntitlements: '312,500', totalDeductions: '42,750', totalNet: '269,750', notCalculated: 7 };
 
 export const MOCK_RATES: EmployeeRate[] = [
   { id: 1, name: 'أحمد محمد علي', percentage: '10' }, { id: 2, name: 'منى سعيد حسن', percentage: '10' }, { id: 3, name: 'خالد إبراهيم محمود', percentage: '7' },

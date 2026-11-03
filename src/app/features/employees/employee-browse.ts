@@ -1,3 +1,5 @@
+import { CanDirective } from '../../core/auth/permissions';
+import { AuthService } from '../../core/auth/auth.service';
 import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -19,13 +21,14 @@ interface Col { field: Field; label: string; options?: string[]; date?: boolean;
 
 @Component({
   selector: 'app-employee-browse',
-  imports: [AppDatePipe, PageHeader, EmployeeFilters, Pagination, TableState, Icon, FormsModule, JobStatusBadge],
+  imports: [CanDirective, AppDatePipe, PageHeader, EmployeeFilters, Pagination, TableState, Icon, FormsModule, JobStatusBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './employee-browse.html',
 })
 export class EmployeeBrowse {
   private readonly svc = inject(EmployeesService);
   private readonly toast = inject(ToastService);
+  protected readonly canEdit = inject(AuthService).can('hr.edit');
   private filter: EmployeeFilter = {};
   protected readonly list = new ListState<Employee>((page, pageSize) => this.svc.search({ ...this.filter, page, pageSize }));
 

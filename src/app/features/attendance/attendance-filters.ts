@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { LookupsService } from '../../shared/data/lookups.service';
 import { SelectField, TextField } from '../../shared/ui/fields';
 import { Icon } from '../../shared/ui/icon';
+import { ToastService } from '../../shared/ui/toast';
 
 export interface AttendanceFilter { department: string; employee: string; type: string; from: string; to: string; }
 
@@ -49,11 +50,24 @@ export class AttendanceFilters {
   protected readonly department = signal('');
   protected readonly employee = signal('');
   protected readonly type = signal('');
-  protected readonly from = signal('2026-05-01');
-  protected readonly to = signal('2026-05-31');
+  /** Default period = start of the current year → end of the current month. */
+  private static monthRange() {
+    const d = new Date(), y = d.getFullYear(), m = d.getMonth();
+    const iso = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+    return { from: iso(new Date(y, 0, 1)), to: iso(new Date(y, m + 1, 0)) };
+  }
+  protected readonly from = signal(AttendanceFilters.monthRange().from);
+  protected readonly to = signal(AttendanceFilters.monthRange().to);
+  private readonly toast = inject(ToastService);
 
   protected emit() {
+    if (this.from() && this.to() && this.from() > this.to()) { this.toast.error('تاريخ البداية لازم يكون قبل تاريخ النهاية'); return; }
     this.search.emit({ department: this.department(), employee: this.employee(), type: this.type(), from: this.from(), to: this.to() });
   }
-  protected reset() { this.department.set(''); this.employee.set(''); this.type.set(''); this.emit(); }
+  /** Clears every filter, including the period (back to the default period). */
+  protected reset() {
+    const r = AttendanceFilters.monthRange();
+    this.department.set(''); this.employee.set(''); this.type.set(''); this.from.set(r.from); this.to.set(r.to);
+    this.emit();
+  }
 }

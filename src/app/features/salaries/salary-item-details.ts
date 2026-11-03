@@ -1,3 +1,4 @@
+import { CanDirective } from '../../core/auth/permissions';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +12,7 @@ import { ItemTypePill } from './item-type-pill';
 /** Screen 13 – تفاصيل بند المرتب (/salaries/items/:code). */
 @Component({
   selector: 'app-salary-item-details',
-  imports: [PageHeader, Icon, FormsModule, ItemTypePill],
+  imports: [CanDirective, PageHeader, Icon, FormsModule, ItemTypePill],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="تفاصيل بند المرتب" backTo="/salaries/items"
@@ -59,7 +60,7 @@ import { ItemTypePill } from './item-type-pill';
         </div>
         <div class="flex justify-between items-center px-5 py-3">
           <span class="text-sm text-gray-500">عرض {{ deps().length }} من {{ deps().length }} بنود</span>
-          <button type="button" class="btn-primary" (click)="add()"><app-icon name="plus" [size]="16" /> إضافة بند</button>
+          <button *appCan="'salaries.edit'" type="button" class="btn-primary" (click)="add()"><app-icon name="plus" [size]="16" /> إضافة بند</button>
         </div>
       </section>
     </main>
@@ -76,7 +77,7 @@ export class SalaryItemDetails {
   protected pick = '';
   protected order = '';
 
-  constructor() { effect(() => this.svc.itemDependencies(this.code()).subscribe((d) => this.deps.set(d))); }
+  constructor() { effect((onCleanup) => { const sub = this.svc.itemDependencies(this.code()).subscribe((d) => this.deps.set(d)); onCleanup(() => sub.unsubscribe()); }); }
 
   add() {
     if (this.deps().some((d) => d.code === '')) return;

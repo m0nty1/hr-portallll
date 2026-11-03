@@ -31,8 +31,8 @@ export class ApiService {
     if (environment.useMock) return this.mock(mock);
     return this.http.put<T>(this.base + url, body);
   }
-  delete<T = void>(url: string, mock?: T): Observable<T> {
-    if (environment.useMock) return this.mock(mock as T);
+  delete<T = void>(url: string, mock?: T | (() => T)): Observable<T> {
+    if (environment.useMock) return this.mock((mock ?? (undefined as T)) as T | (() => T));
     return this.http.delete<T>(this.base + url);
   }
   /** Downloads a file (Excel / PDF exports). */

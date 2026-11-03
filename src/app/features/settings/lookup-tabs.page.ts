@@ -146,15 +146,19 @@ export class LookupTabsPage {
   });
   protected readonly pages = computed(() => Math.max(1, Math.ceil(this.filtered().length / this.size())));
   protected readonly pageList = computed(() => Array.from({ length: this.pages() }, (_, i) => i + 1));
+  /** After a delete, never stay on a page that no longer exists. */
+  private readonly clampPage = effect(() => { const max = this.pages(); if (this.page() > max) this.page.set(max); });
   protected readonly paged = computed(() => this.filtered().slice((this.page() - 1) * this.size(), this.page() * this.size()));
 
   constructor() {
-    effect(() => {
+    effect((onCleanup) => {
       const t = this.current();
       this.editing.set(null);
       this.q.set('');
       this.page.set(1);
-      this.api.get<Row[]>(`/settings/lookups/${t.slug}`, undefined, () => this.store.rows(t.slug)).subscribe((r) => this.rows.set(r));
+      this.rows.set([]);
+      const sub = this.api.get<Row[]>(`/settings/lookups/${t.slug}`, undefined, () => this.store.rows(t.slug)).subscribe((r) => this.rows.set(r));
+      onCleanup(() => sub.unsubscribe()); // switching tabs quickly never shows another tab's rows
     });
   }
 
@@ -200,7 +204,7 @@ export class LookupTabsPage {
   }
   /** Keeps every dropdown in the app in sync with the table that was just edited. */
   private synced() {
-    this.store.set(this.current().slug, this.rows().filter((r) => r !== this.editing()));
+    this.store.set(this.current().slug, this.rows());
     this.lookups.refresh();
   }
 }

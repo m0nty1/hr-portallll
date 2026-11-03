@@ -80,10 +80,11 @@ export class NonStaffDetails {
   });
 
   constructor() {
-    effect(() => {
+    effect((onCleanup) => {
       const id = +this.id();
-      this.svc.nonStaffItem(id).subscribe((d) => this.d.set(d));
-      this.svc.nonStaffLines(id).subscribe((l) => this.lines.set(l));
+      const a = this.svc.nonStaffItem(id).subscribe((d) => this.d.set(d));
+      const b = this.svc.nonStaffLines(id).subscribe((l) => this.lines.set(l));
+      onCleanup(() => { a.unsubscribe(); b.unsubscribe(); });
     });
   }
   print() { printPage(); }

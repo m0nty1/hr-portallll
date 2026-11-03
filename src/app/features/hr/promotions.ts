@@ -1,5 +1,6 @@
+import { CanDirective } from '../../core/auth/permissions';
 import { ConfirmService } from '../../shared/ui/confirm';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, effect } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api/api.service';
@@ -21,7 +22,7 @@ const show = (d: string) => (d ? d.split('-').reverse().join('/') : '');
 /** Screen 33 – كشوف الترقيات (/hr/promotions). API: GET/POST/PUT/DELETE /hr/promotions, POST /hr/promotions/apply. */
 @Component({
   selector: 'app-promotions',
-  imports: [PageHeader, Icon, FormsModule],
+  imports: [CanDirective, PageHeader, Icon, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="كشوف الترقيات" [breadcrumb]="[{ label: 'الموارد البشرية' }, { label: 'كشوف الترقيات' }]" />
@@ -38,8 +39,8 @@ const show = (d: string) => (d ? d.split('-').reverse().join('/') : '');
         <div class="flex flex-wrap items-center justify-between gap-2 p-[13px]">
           <h2 class="font-bold text-navy">الموظفون المستحقون للترقية</h2>
           <div class="flex gap-2">
-            <button type="button" class="btn-primary" [disabled]="editing() !== null" (click)="add()"><app-icon name="plus" [size]="16" /> إضافة موظف</button>
-            <button type="button" class="btn-navy" (click)="apply()"><app-icon name="refresh" [size]="16" /> تحديث الترقيات</button>
+            <button *appCan="'hr.edit'" type="button" class="btn-primary" [disabled]="editing() !== null" (click)="add()"><app-icon name="plus" [size]="16" /> إضافة موظف</button>
+            <button *appCan="'hr.edit'" type="button" class="btn-navy" (click)="apply()"><app-icon name="refresh" [size]="16" /> تحديث الترقيات</button>
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -63,8 +64,8 @@ const show = (d: string) => (d ? d.split('-').reverse().join('/') : '');
                     <td class="td text-gray-800">{{ r.name }}</td><td class="td">{{ r.grade }}</td><td class="td">{{ fmtDate(r.gradeDate) }}</td>
                     <td class="td text-center"><input type="checkbox" class="checkbox" [checked]="r.updated" disabled aria-label="تم التحديث" /></td>
                     <td class="td"><div class="flex justify-center gap-2">
-                      <button type="button" class="icon-btn-delete" (click)="remove(r)" aria-label="حذف"><app-icon name="delete" [size]="16" /></button>
-                      <button type="button" class="icon-btn-edit" (click)="edit(r)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
+                      <button *appCan="'hr.edit'" type="button" class="icon-btn-delete" (click)="remove(r)" aria-label="حذف"><app-icon name="delete" [size]="16" /></button>
+                      <button *appCan="'hr.edit'" type="button" class="icon-btn-edit" (click)="edit(r)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
                     </div></td>
                   </tr>
                 }
@@ -101,6 +102,8 @@ export class Promotions {
   protected readonly editing = signal<number | null>(null);
   protected readonly view = computed(() => this.rows().filter((r) => r.id === this.editing() ||
     ((!this.fName() || r.name === this.fName()) && (!this.fGrade() || r.grade === this.fGrade()) && (!this.fDate() || r.gradeDate === this.fDate()))));
+  /** After a delete, never stay on a page that no longer exists. */
+  private readonly clampPage = effect(() => { const max = Math.max(1, Math.ceil(this.view().length / this.size())); if (this.page() > max) this.page.set(max); });
   protected readonly paged = computed(() => this.view().slice((this.page() - 1) * this.size(), this.page() * this.size()));
   protected d = {} as Promotion;
   private isNew = false;
