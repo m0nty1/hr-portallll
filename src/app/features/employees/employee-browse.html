@@ -15,7 +15,7 @@
         <thead>
           <tr class="table-head text-sm">
             <th class="th !px-3">كود الموظف <app-icon name="arrow-up-down" [size]="13" class="opacity-60" /></th>
-            @for (c of cols; track c.field) { <th class="th !px-3">{{ c.label }} <app-icon name="arrow-up-down" [size]="13" class="opacity-60" /></th> }
+            @for (c of cols(); track c.field) { <th class="th !px-3">{{ c.label }} <app-icon name="arrow-up-down" [size]="13" class="opacity-60" /></th> }
           </tr>
         </thead>
         <tbody>
@@ -25,7 +25,7 @@
             @for (e of rows(); track $index; let i = $index) {
               <tr class="border-b border-gray-50" [class.!bg-orange-50]="edited().has(i)">
                 <td class="td !px-3 text-sm text-gray-700 font-medium">{{ e.code }}</td>
-                @for (c of cols; track c.field) {
+                @for (c of cols(); track c.field) {
                   <td class="td !px-3 text-sm cursor-text whitespace-nowrap" [class]="c.field === 'name' ? 'text-gray-800 font-semibold' : 'text-gray-500'"
                     (click)="editing.set({ row: i, field: c.field })">
                     @if (isEditing(i, c.field)) {
@@ -41,7 +41,7 @@
                       @switch (c.field) {
                         @case ('jobStatus') { <app-job-status [status]="e.jobStatus" /> }
                         @case ('basic') { <span class="font-semibold text-navy">{{ e.basic }} ج.م</span> }
-                        @default { {{ e[c.field] }} }
+                        @default { {{ c.date ? (e[c.field] | appDate) : e[c.field] }} }
                       }
                     }
                   </td>

@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../shared/ui/confirm';
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -81,6 +82,7 @@ import { ItemTypePill } from './item-type-pill';
   `,
 })
 export class SalaryItems {
+  private readonly dialog = inject(ConfirmService);
   private readonly svc = inject(SalariesService);
   private readonly toast = inject(ToastService);
   private readonly groups = toSignal(this.svc.groups(), { initialValue: [] });
@@ -111,8 +113,8 @@ export class SalaryItems {
       this.toast.success('تم حفظ البند');
     });
   }
-  remove(r: SalaryItem) {
-    if (!confirm(`حذف البند ${r.name}؟`)) return;
+  async remove(r: SalaryItem) {
+    if (!(await this.dialog.ask(`حذف البند ${r.name}؟`))) return;
     this.svc.deleteItem(r.id).subscribe(() => { this.rows.update((rs) => rs.filter((x) => x.id !== r.id)); this.toast.success('تم الحذف'); });
   }
 }

@@ -1,3 +1,4 @@
+import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { NonStaffDisbursement, NonStaffLine } from '../../shared/data/models';
 import { SalariesService } from '../../shared/data/salaries.service';
@@ -63,12 +64,13 @@ import { fmt, num } from '../../shared/util/num';
 export class NonStaffDetails {
   readonly id = input.required<string>();
   private readonly svc = inject(SalariesService);
+  private readonly datePipe = new AppDatePipe();
   protected readonly d = signal<NonStaffDisbursement | undefined>(undefined);
   protected readonly lines = signal<NonStaffLine[]>([]);
   protected readonly fields = computed(() => {
     const d = this.d();
     return d ? [
-      { l: 'الإدارة', v: d.dept }, { l: 'تاريخ الصرفية', v: d.date }, { l: 'النسبة', v: d.ratio, c: 'text-brand' },
+      { l: 'الإدارة', v: d.dept }, { l: 'تاريخ الصرفية', v: this.datePipe.transform(d.date) }, { l: 'النسبة', v: d.ratio, c: 'text-brand' },
       { l: 'عدد الموظفين', v: String(d.employees) }, { l: 'إجمالي الصرفية', v: d.total + ' ج.م', c: 'text-brand' },
     ] : [];
   });

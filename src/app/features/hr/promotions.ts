@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../shared/ui/confirm';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -15,7 +16,6 @@ const MOCK: Promotion[] = [
   { id: 4, name: 'سارة عبد الله يوسف', grade: 'الدرجة العليا', gradeDate: '2024-07-01', updated: true },
   { id: 5, name: 'محمود حسن سالم', grade: 'الدرجة الثالثة', gradeDate: '2022-07-01', updated: false },
 ];
-const GRADES = ['الدرجة الممتازة', 'الدرجة العليا', 'الدرجة الأولى', 'الدرجة الثانية', 'الدرجة الثالثة'];
 const show = (d: string) => (d ? d.split('-').reverse().join('/') : '');
 
 /** Screen 33 – كشوف الترقيات (/hr/promotions). API: GET/POST/PUT/DELETE /hr/promotions, POST /hr/promotions/apply. */
@@ -87,10 +87,11 @@ const show = (d: string) => (d ? d.split('-').reverse().join('/') : '');
   `,
 })
 export class Promotions {
+  private readonly dialog = inject(ConfirmService);
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
   protected readonly lk = toSignal(inject(LookupsService).all$);
-  protected readonly grades = GRADES;
+  protected get grades() { return this.lk()?.grades ?? []; }
   protected readonly rows = signal<Promotion[]>([]);
   protected readonly fName = signal('');
   protected readonly fGrade = signal('');
@@ -108,7 +109,7 @@ export class Promotions {
   constructor() { this.api.get<Promotion[]>('/hr/promotions', undefined, MOCK).subscribe((r) => this.rows.set(r)); }
   edit(r: Promotion) { this.isNew = false; this.d = { ...r }; this.editing.set(r.id); }
   add() {
-    const r: Promotion = { id: -Date.now(), name: '', grade: GRADES[2], gradeDate: '', updated: false };
+    const r: Promotion = { id: -Date.now(), name: '', grade: this.grades[2] ?? '', gradeDate: '', updated: false };
     this.rows.update((rs) => [r, ...rs]); this.page.set(1); this.edit(r); this.isNew = true;
   }
   cancel() { if (this.isNew) this.rows.update((rs) => rs.filter((r) => r.id !== this.editing())); this.editing.set(null); }
@@ -117,8 +118,8 @@ export class Promotions {
     const req = this.isNew ? this.api.post('/hr/promotions', this.d, this.d) : this.api.put(`/hr/promotions/${this.d.id}`, this.d, this.d);
     req.subscribe(() => { this.rows.update((rs) => rs.map((r) => (r.id === this.d.id ? { ...this.d } : r))); this.editing.set(null); this.toast.success('تم الحفظ'); });
   }
-  remove(r: Promotion) {
-    if (!confirm(`حذف ${r.name} من الكشف؟`)) return;
+  async remove(r: Promotion) {
+    if (!(await this.dialog.ask(`حذف ${r.name} من الكشف؟`))) return;
     this.api.delete(`/hr/promotions/${r.id}`).subscribe(() => { this.rows.update((rs) => rs.filter((x) => x.id !== r.id)); this.toast.success('تم الحذف'); });
   }
   apply() {

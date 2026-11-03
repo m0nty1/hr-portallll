@@ -1,3 +1,5 @@
+import { fmt, num } from '../../shared/util/num';
+import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { LookupsService } from '../../shared/data/lookups.service';
@@ -14,7 +16,7 @@ import { ListState } from '../../shared/util/list-state';
 /** Screen 10 – بيان الأقساط (/salaries/installments). "الجملة" = sum of the الإجمالي column. */
 @Component({
   selector: 'app-installments-statement',
-  imports: [PageHeader, SelectField, Icon, Pagination, TableState],
+  imports: [AppDatePipe, PageHeader, SelectField, Icon, Pagination, TableState],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="بيان الأقساط" [breadcrumb]="[{ label: 'المرتبات' }, { label: 'بيان الأقساط' }]" />
@@ -54,7 +56,7 @@ import { ListState } from '../../shared/util/list-state';
                   <td class="td font-bold text-gray-800">{{ r.name }}</td>
                   <td class="td text-gray-600">{{ r.desc }}</td>
                   <td class="td font-bold text-navy">{{ r.value }} ج.م</td>
-                  <td class="td text-gray-500">{{ r.from }}</td>
+                  <td class="td text-gray-500">{{ r.from | appDate }}</td>
                   <td class="td text-center text-gray-700">{{ r.count }}</td>
                   <td class="td font-bold text-brand">{{ r.total }}</td>
                   <td class="td text-gray-400">{{ r.notes || '—' }}</td>
@@ -82,8 +84,8 @@ export class InstallmentsStatement {
     type: this.type(), department: this.department(), costCenter: this.costCenter(), employee: this.employee(), page, pageSize,
   }));
   protected readonly sum = computed(() => {
-    const n = (v: string) => +v.replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[^\d.]/g, '') || 0;
-    return this.list.rows().reduce((a, r) => a + n(r.total), 0).toLocaleString('ar-EG');
+    const n = num;
+    return fmt(this.list.rows().reduce((a, r) => a + n(r.total), 0));
   });
 
   constructor() { this.list.load(); }

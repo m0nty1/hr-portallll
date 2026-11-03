@@ -1,5 +1,8 @@
+import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { LookupsService } from '../../shared/data/lookups.service';
 import { EmployeesService } from '../../shared/data/employees.service';
 import { Employee, EmployeeFilter } from '../../shared/data/models';
 import { Icon } from '../../shared/ui/icon';
@@ -16,7 +19,7 @@ interface Col { field: Field; label: string; options?: string[]; date?: boolean;
 
 @Component({
   selector: 'app-employee-browse',
-  imports: [PageHeader, EmployeeFilters, Pagination, TableState, Icon, FormsModule, JobStatusBadge],
+  imports: [AppDatePipe, PageHeader, EmployeeFilters, Pagination, TableState, Icon, FormsModule, JobStatusBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './employee-browse.html',
 })
@@ -26,17 +29,19 @@ export class EmployeeBrowse {
   private filter: EmployeeFilter = {};
   protected readonly list = new ListState<Employee>((page, pageSize) => this.svc.search({ ...this.filter, page, pageSize }));
 
-  protected readonly cols: Col[] = [
+  private readonly lk = toSignal(inject(LookupsService).all$);
+  /** Dropdown options come from the settings tables (single source of truth). */
+  protected readonly cols = computed<Col[]>(() => [
     { field: 'name', label: 'اسم الموظف' },
     { field: 'jobStatus', label: 'الحالة الوظيفية', options: ['عامل', 'موقوف'] },
-    { field: 'appointType', label: 'نوع التعيين', options: ['دائم', 'مؤقت'] },
+    { field: 'appointType', label: 'نوع التعيين', options: this.lk()?.appointTypes ?? [] },
     { field: 'appointDate', label: 'تاريخ التعيين', date: true },
-    { field: 'grade', label: 'الدرجة الوظيفية', options: ['أولى', 'ثانية', 'ثالثة'] },
+    { field: 'grade', label: 'الدرجة الوظيفية', options: this.lk()?.grades ?? [] },
     { field: 'gradeDate', label: 'تاريخ الدرجة', date: true },
-    { field: 'bank', label: 'البنك', options: ['بنك مصر', 'البنك الأهلي', 'بنك القاهرة'] },
+    { field: 'bank', label: 'البنك', options: this.lk()?.banks ?? [] },
     { field: 'basic', label: 'المرتب الأساسي' },
     { field: 'birthDate', label: 'تاريخ الميلاد', date: true },
-  ];
+  ]);
 
   /** Working copy (edited) vs. last saved copy. */
   protected readonly rows = signal<Employee[]>([]);

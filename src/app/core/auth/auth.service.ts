@@ -26,6 +26,11 @@ export class AuthService {
   readonly user = this._user.asReadonly();
   readonly token = signal<string | null>(this.read<string>(TOKEN_KEY));
   readonly isLoggedIn = computed(() => !!this.token());
+  /** True when the user holds the permission. An empty permission list = full access (mock admin). */
+  can(permission: string): boolean {
+    const p = this.user().permissions ?? [];
+    return p.length === 0 || p.includes(permission);
+  }
 
   login(username: string, password: string): Observable<LoginResponse> {
     const mock: LoginResponse = {
@@ -51,11 +56,6 @@ export class AuthService {
     this._user.set(GUEST);
     try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch {}
     this.router.navigateByUrl('/login');
-  }
-
-  can(permission: string) {
-    const p = this._user().permissions;
-    return p.length === 0 || p.includes(permission);
   }
 
   private read<T>(k: string): T | null {

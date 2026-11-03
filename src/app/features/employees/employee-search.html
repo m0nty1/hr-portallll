@@ -24,12 +24,12 @@
                 <td class="td !px-3 text-gray-800 font-semibold whitespace-nowrap">{{ e.name }}</td>
                 <td class="td !px-3"><app-job-status [status]="e.jobStatus" /></td>
                 <td class="td !px-3 text-gray-600">{{ e.appointType }}</td>
-                <td class="td !px-3 text-gray-500">{{ e.appointDate }}</td>
+                <td class="td !px-3 text-gray-500">{{ e.appointDate | appDate }}</td>
                 <td class="td !px-3 text-gray-600">{{ e.grade }}</td>
-                <td class="td !px-3 text-gray-500">{{ e.gradeDate }}</td>
+                <td class="td !px-3 text-gray-500">{{ e.gradeDate | appDate }}</td>
                 <td class="td !px-3 text-gray-500">{{ e.bank }}</td>
                 <td class="td !px-3 font-semibold text-navy whitespace-nowrap">{{ e.basic }} ج.م</td>
-                <td class="td !px-3 text-gray-500">{{ e.birthDate }}</td>
+                <td class="td !px-3 text-gray-500">{{ e.birthDate | appDate }}</td>
                 <td class="td !px-3 text-center">
                   <a [routerLink]="['/employees', e.code]" class="w-7 h-7 rounded-full border border-brand text-brand flex items-center justify-center mx-auto hover:bg-orange-50" [attr.aria-label]="'عرض ملف ' + e.name">
                     <app-icon name="eye" />

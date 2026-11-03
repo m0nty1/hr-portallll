@@ -1,3 +1,5 @@
+import { CanDirective } from '../../core/auth/permissions';
+import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LookupsService } from '../../shared/data/lookups.service';
@@ -15,7 +17,7 @@ type Tab = 'personal' | 'job' | 'salary' | 'raises';
 
 @Component({
   selector: 'app-employee-profile',
-  imports: [PageHeader, Icon, SalaryVariablesCard, NgTemplateOutlet, FormsModule],
+  imports: [AppDatePipe, PageHeader, Icon, SalaryVariablesCard, NgTemplateOutlet, FormsModule, CanDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './employee-profile.html',
 })

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
+import { permissionGuard } from './core/auth/permissions';
 import { Login } from './core/auth/login';
 import { Shell } from './core/layout/shell';
 import { PlaceholderPage } from './shared/ui/placeholder-page';
@@ -14,6 +15,7 @@ export const routes: Routes = [
     path: '',
     component: Shell,
     canActivate: [authGuard],
+    canActivateChild: [permissionGuard],
     children: [
       { path: '', title: 'الرئيسية', loadComponent: () => import('./features/home/home').then((m) => m.Home) },
 
@@ -76,6 +78,7 @@ export const routes: Routes = [
       // Any other system-setting card from screen 23 without a design yet
       { path: 'settings/:slug', component: PlaceholderPage, data: { title: 'إعداد قيد التصميم' }, title: 'الإعدادات' },
 
+      { path: 'forbidden', component: PlaceholderPage, data: { title: 'غير مسموح لك بفتح هذه الصفحة' }, title: 'غير مسموح' },
       { path: '**', component: PlaceholderPage, data: { title: 'الصفحة غير موجودة' } },
     ],
   },

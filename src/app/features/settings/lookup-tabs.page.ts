@@ -1,13 +1,16 @@
+import { ConfirmService } from '../../shared/ui/confirm';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
+import { MockLookupStore } from '../../shared/data/lookup-store';
+import { LookupsService } from '../../shared/data/lookups.service';
 import { Icon } from '../../shared/ui/icon';
 import { PageHeader } from '../../shared/ui/page-header';
 import { ToastService } from '../../shared/ui/toast';
-import { HR_TABS, LookupTab, SALARY_TABS } from './lookup-tabs.config';
+import { HR_TABS, LookupTab, SALARY_TABS } from '../../shared/data/lookup-tables';
 
-type Row = Record<string, string | boolean>;
+type Row = Record<string, string | boolean | number>;
 
 /**
  * Screens 31 (إعدادات الموارد البشرية) and 32 (إعدادات المرتبات والحوافز):
@@ -115,6 +118,7 @@ type Row = Record<string, string | boolean>;
   `,
 })
 export class LookupTabsPage {
+  private readonly dialog = inject(ConfirmService);
   readonly group = input<'hr' | 'salary'>('hr');
   readonly title = input('الإعدادات');
   readonly tab = input<string>();
@@ -122,6 +126,8 @@ export class LookupTabsPage {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly store = inject(MockLookupStore);
+  private readonly lookups = inject(LookupsService);
 
   protected readonly tabs = computed(() => (this.group() === 'hr' ? HR_TABS : SALARY_TABS));
   protected readonly current = computed<LookupTab>(() => this.tabs().find((t) => t.slug === this.tab()) ?? this.tabs()[0]);
@@ -148,7 +154,7 @@ export class LookupTabsPage {
       this.editing.set(null);
       this.q.set('');
       this.page.set(1);
-      this.api.get<Row[]>(`/settings/lookups/${t.slug}`, undefined, t.rows).subscribe((r) => this.rows.set(r));
+      this.api.get<Row[]>(`/settings/lookups/${t.slug}`, undefined, () => this.store.rows(t.slug)).subscribe((r) => this.rows.set(r));
     });
   }
 
@@ -172,22 +178,29 @@ export class LookupTabsPage {
   }
   protected save() {
     const e = this.editing()!, d = this.draft();
-    const keyCol = this.current().cols[0].key;
-    if (!String(d[keyCol] ?? '').trim()) { this.toast.error(`برجاء إدخال ${this.current().cols[0].label}`); return; }
+    const keyCol = this.current().idKey ?? this.current().cols[0].key;
+    if (!String(d[this.current().cols[0].key] ?? '').trim()) { this.toast.error(`برجاء إدخال ${this.current().cols[0].label}`); return; }
     const url = `/settings/lookups/${this.current().slug}`;
     const req = this.isNew() ? this.api.post(url, d, d) : this.api.put(`${url}/${e[keyCol]}`, d, d);
     req.subscribe(() => {
       this.rows.update((rs) => rs.map((r) => (r === e ? d : r)));
+      this.synced();
       this.editing.set(null);
       this.toast.success('تم الحفظ بنجاح');
     });
   }
-  protected remove(r: Row) {
-    if (!confirm('هل تريد حذف هذا السجل؟')) return;
-    const keyCol = this.current().cols[0].key;
+  protected async remove(r: Row) {
+    if (!(await this.dialog.ask('هل تريد حذف هذا السجل؟'))) return;
+    const keyCol = this.current().idKey ?? this.current().cols[0].key;
     this.api.delete(`/settings/lookups/${this.current().slug}/${r[keyCol]}`).subscribe(() => {
       this.rows.update((rs) => rs.filter((x) => x !== r));
+      this.synced();
       this.toast.success('تم الحذف');
     });
+  }
+  /** Keeps every dropdown in the app in sync with the table that was just edited. */
+  private synced() {
+    this.store.set(this.current().slug, this.rows().filter((r) => r !== this.editing()));
+    this.lookups.refresh();
   }
 }

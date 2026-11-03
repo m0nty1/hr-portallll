@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { filter, map } from 'rxjs';
 import { Icon } from '../../shared/ui/icon';
 import { AuthService } from '../auth/auth.service';
+import { permissionForUrl } from '../auth/permissions';
 import { LayoutService } from './layout.service';
 import { NAV, NavGroup } from './nav.config';
 
@@ -17,7 +18,13 @@ export class Sidebar {
   protected readonly layout = inject(LayoutService);
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  protected readonly nav = NAV;
+  /** Menu filtered by the user's permissions. */
+  protected readonly nav = computed(() => {
+    this.auth.user();
+    return NAV.map((n) => (n.type === 'group' ? { ...n, children: n.children.filter((c) => this.allowed(c.to)) } : n))
+      .filter((n) => (n.type === 'link' ? this.allowed(n.to) : n.children.length > 0));
+  });
+  private allowed(url: string) { const p = permissionForUrl(url); return !p || this.auth.can(p); }
 
   protected readonly url = toSignal(
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd), map(() => this.router.url)),

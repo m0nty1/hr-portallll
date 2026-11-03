@@ -1,3 +1,4 @@
+import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AttendanceService } from '../../shared/data/attendance.service';
@@ -17,7 +18,7 @@ export const LEAVE_COLORS: Record<LeaveType, string> = {
 /** Screen 03 – كشف الغياب والإجازات (/attendance/absence). */
 @Component({
   selector: 'app-absence-report',
-  imports: [PageHeader, AttendanceFilters, Pagination, TableState, FormsModule],
+  imports: [AppDatePipe, PageHeader, AttendanceFilters, Pagination, TableState, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="كشف الغياب والإجازات" [breadcrumb]="[{ label: 'الحضور والانصراف' }, { label: 'كشف الغياب' }]" />
@@ -38,8 +39,8 @@ export const LEAVE_COLORS: Record<LeaveType, string> = {
                   <td class="td font-semibold text-gray-800">{{ r.name }}</td>
                   <td class="td text-center"><span class="pill" [class]="colors[r.type]">{{ r.type }}</span></td>
                   <td class="td text-center font-bold text-navy">{{ r.days }}</td>
-                  <td class="td text-gray-500">{{ r.from }}</td>
-                  <td class="td text-gray-500">{{ r.to }}</td>
+                  <td class="td text-gray-500">{{ r.from | appDate }}</td>
+                  <td class="td text-gray-500">{{ r.to | appDate }}</td>
                   <td class="td text-center"><input type="checkbox" class="checkbox" [attr.aria-label]="'تحديد ' + r.name" [ngModel]="checked().has(r.id)" (ngModelChange)="toggle(r.id)" /></td>
                 </tr>
               } @empty {

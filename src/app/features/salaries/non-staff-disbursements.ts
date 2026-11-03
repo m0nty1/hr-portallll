@@ -1,3 +1,4 @@
+import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
@@ -18,7 +19,7 @@ export const DISB_TYPE_COLORS: Partial<Record<string, string>> = { 'حوافز �
 /** Screen 19a – صرفيات غير العاملين (/salaries/non-staff). */
 @Component({
   selector: 'app-non-staff-disbursements',
-  imports: [PageHeader, SelectField, TextField, Icon, Pagination, TableState, RouterLink],
+  imports: [AppDatePipe, PageHeader, SelectField, TextField, Icon, Pagination, TableState, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="صرفيات غير العاملين" [breadcrumb]="[{ label: 'المرتبات والحوافز' }, { label: 'صرفيات غير العاملين' }]" />
@@ -59,7 +60,7 @@ export const DISB_TYPE_COLORS: Partial<Record<string, string>> = { 'حوافز �
                   <td class="td text-gray-400">{{ i + 1 }}</td>
                   <td class="td text-center"><span class="pill" [class]="colors[r.type] || 'bg-blue-50 text-blue-600'">{{ r.type }}</span></td>
                   <td class="td text-gray-700">{{ r.dept }}</td>
-                  <td class="td text-gray-500">{{ r.date }}</td>
+                  <td class="td text-gray-500">{{ r.date | appDate }}</td>
                   <td class="td text-center font-bold text-gray-700">{{ r.employees }}</td>
                   <td class="td font-bold text-brand">{{ r.total }} ج.م</td>
                   <td class="td text-gray-400">{{ r.notes }}</td>

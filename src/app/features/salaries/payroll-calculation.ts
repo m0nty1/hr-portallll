@@ -1,3 +1,5 @@
+import { CanDirective } from '../../core/auth/permissions';
+import { ConfirmService } from '../../shared/ui/confirm';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { LookupsService } from '../../shared/data/lookups.service';
@@ -13,7 +15,7 @@ type Scope = 'appointType' | 'department' | 'employee';
 /** Screen 20 – حساب المرتبات والصرفيات (/salaries/calculate). Radio picks which selector is enabled. */
 @Component({
   selector: 'app-payroll-calculation',
-  imports: [PageHeader, SelectField, Icon],
+  imports: [PageHeader, SelectField, Icon, CanDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="حساب المرتبات والصرفيات" [breadcrumb]="[{ label: 'المرتبات' }, { label: 'حساب المرتبات والصرفيات' }]" />
@@ -41,7 +43,7 @@ type Scope = 'appointType' | 'department' | 'employee';
         </div>
         <div class="flex gap-2 border-t border-gray-100 mt-4 pt-4">
           <button type="button" class="btn-primary" [disabled]="busy()" (click)="calc()"><app-icon name="calculator" [size]="16" /> {{ busy() ? 'جاري الحساب...' : 'حساب المرتبات' }}</button>
-          <button type="button" class="btn-navy" [disabled]="!summary()" (click)="approve()"><app-icon name="check" [size]="16" /> اعتماد الصرف</button>
+          <button *appCan="'salaries.approve'" type="button" class="btn-navy" [disabled]="!summary()" (click)="approve()"><app-icon name="check" [size]="16" /> اعتماد الصرف</button>
         </div>
       </section>
 
@@ -57,6 +59,7 @@ type Scope = 'appointType' | 'department' | 'employee';
   `,
 })
 export class PayrollCalculation {
+  private readonly dialog = inject(ConfirmService);
   private readonly svc = inject(SalariesService);
   private readonly toast = inject(ToastService);
   protected readonly lk = toSignal(inject(LookupsService).all$);
@@ -100,8 +103,8 @@ export class PayrollCalculation {
     this.busy.set(true);
     this.svc.calculate(this.body()).subscribe({ next: (s) => { this.summary.set(s); this.busy.set(false); }, error: () => this.busy.set(false) });
   }
-  approve() {
-    if (!confirm('تأكيد اعتماد الصرف؟')) return;
+  async approve() {
+    if (!(await this.dialog.ask('تأكيد اعتماد الصرف؟'))) return;
     this.svc.approve(this.body()).subscribe(() => this.toast.success('تم اعتماد الصرف'));
   }
 }

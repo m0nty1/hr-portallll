@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../shared/ui/confirm';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SalaryItemGroup } from '../../shared/data/models';
@@ -62,6 +63,7 @@ import { ToastService } from '../../shared/ui/toast';
   `,
 })
 export class SalaryItemGroups {
+  private readonly dialog = inject(ConfirmService);
   private readonly svc = inject(SalariesService);
   private readonly toast = inject(ToastService);
   protected readonly rows = signal<SalaryItemGroup[]>([]);
@@ -89,8 +91,8 @@ export class SalaryItemGroups {
       this.rows.update((r) => r.map((x) => (x === old ? { ...this.d } : x))); this.editing.set(null); this.toast.success('تم الحفظ');
     });
   }
-  remove(g: SalaryItemGroup) {
-    if (!confirm(`حذف المجموعة ${g.name}؟`)) return;
+  async remove(g: SalaryItemGroup) {
+    if (!(await this.dialog.ask(`حذف المجموعة ${g.name}؟`))) return;
     this.svc.deleteGroup(g.code).subscribe(() => { this.rows.update((r) => r.filter((x) => x !== g)); this.toast.success('تم الحذف'); });
   }
 }

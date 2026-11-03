@@ -1,3 +1,4 @@
+import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { EmployeesService } from '../../shared/data/employees.service';
@@ -12,7 +13,7 @@ import { JobStatusBadge } from './job-status-badge';
 
 @Component({
   selector: 'app-employee-search',
-  imports: [PageHeader, EmployeeFilters, Pagination, TableState, Icon, RouterLink, JobStatusBadge],
+  imports: [AppDatePipe, PageHeader, EmployeeFilters, Pagination, TableState, Icon, RouterLink, JobStatusBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './employee-search.html',
 })

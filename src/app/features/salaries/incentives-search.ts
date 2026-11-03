@@ -1,3 +1,4 @@
+import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
@@ -16,7 +17,7 @@ import { ListState } from '../../shared/util/list-state';
 /** Screen 08 – بحث عن كشف صرفية حافز (/salaries/incentives). */
 @Component({
   selector: 'app-incentives-search',
-  imports: [PageHeader, SelectField, TextField, Icon, Pagination, TableState, RouterLink],
+  imports: [AppDatePipe, PageHeader, SelectField, TextField, Icon, Pagination, TableState, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="بحث عن كشف صرفية حافز" [breadcrumb]="[{ label: 'المرتبات' }, { label: 'كشوف حوافز' }]" />
@@ -54,7 +55,7 @@ import { ListState } from '../../shared/util/list-state';
                 <tr>
                   <td class="td font-bold text-gray-800">{{ r.payment }}</td>
                   <td class="td text-gray-600">{{ r.dept }}</td>
-                  <td class="td text-gray-600">{{ r.date }}</td>
+                  <td class="td text-gray-600">{{ r.date | appDate }}</td>
                   <td class="td text-gray-400 whitespace-normal">{{ r.notes }}</td>
                   <td class="td text-center">
                     <a [routerLink]="['/salaries/incentives', r.id]" class="inline-flex w-7 h-7 rounded-full border border-brand text-brand items-center justify-center hover:bg-orange-50" aria-label="عرض التفاصيل">
@@ -87,7 +88,7 @@ export class IncentivesSearch {
   }));
   /** Each button maps to a server-side report: GET /incentives/reports/{key}?… */
   protected readonly actions: { label: string; icon: IconName }[] = [
-    { label: 'طباعة', icon: 'print' }, { label: 'طباعة مع بيان الأساسي', icon: 'print' }, { label: 'نموذج المعاشات ٢٠٢٤', icon: 'users' },
+    { label: 'طباعة', icon: 'print' }, { label: 'طباعة مع بيان الأساسي', icon: 'print' }, { label: 'نموذج المعاشات 2024', icon: 'users' },
     { label: 'فيشة حوافز', icon: 'info' }, { label: 'خصومات الربع', icon: 'percent' }, { label: 'نموذج تأمين مرضي', icon: 'shield' },
     { label: 'تصدير إكسل', icon: 'file' }, { label: 'طباعة تكاليف ملخص', icon: 'print' }, { label: 'طباعة تكاليف', icon: 'print' },
   ];

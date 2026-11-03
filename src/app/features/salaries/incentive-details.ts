@@ -1,3 +1,4 @@
+import { fmt, num } from '../../shared/util/num';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -8,8 +9,8 @@ import { Icon, IconName } from '../../shared/ui/icon';
 import { PageHeader } from '../../shared/ui/page-header';
 import { ToastService } from '../../shared/ui/toast';
 
-const EMPTY: IncentiveSheetDetails = { serial: '٥٣٣٥٦', date: '', department: '', payType: '', ratio: '', totalEntitled: '', totalNet: '', notes: '', lines: [] };
-const blankLine = (): IncentiveLine => ({ name: '', basic: '٠٫٠٠', abstract: '٠٫٠٠', duration: '٠٫٠٠', ratio: '٠٫٠٠', entitled: '', deductPct: '٠٫٠٠', total: '', insurance: '***', tax: '٠٫٠٠', net: '' });
+const EMPTY: IncentiveSheetDetails = { serial: '53356', date: '', department: '', payType: '', ratio: '', totalEntitled: '', totalNet: '', notes: '', lines: [] };
+const blankLine = (): IncentiveLine => ({ name: '', basic: '0.00', abstract: '0.00', duration: '0.00', ratio: '0.00', entitled: '', deductPct: '0.00', total: '', insurance: '***', tax: '0.00', net: '' });
 
 /** Screens 09 (تفاصيل الصرفية) and 09b (كشف جديد, id = "new") – /salaries/incentives/:id. */
 @Component({
@@ -35,7 +36,7 @@ const blankLine = (): IncentiveLine => ({ name: '', basic: '٠٫٠٠', abstract:
           <select class="input" [(ngModel)]="s().payType"><option value="">اختر...</option>@for (d of lk()?.incentiveTypes ?? []; track d) { <option>{{ d }}</option> }@if (s().payType && !(lk()?.incentiveTypes ?? []).includes(s().payType)) { <option>{{ s().payType }}</option> }</select></label>
 
         <label class="flex flex-col gap-1"><span class="field-label">النسبة</span>
-          <input class="input !bg-[#dfe7f2] !border-[#c3cede]" [(ngModel)]="s().ratio" placeholder="٪" /></label>
+          <input class="input !bg-[#dfe7f2] !border-[#c3cede]" [(ngModel)]="s().ratio" placeholder="%" /></label>
         <div class="flex flex-col gap-1"><span class="field-label">في الفترة من / إلى</span>
           <div class="flex items-center gap-2">
             <input type="date" class="input !bg-[#dfe7f2] !border-[#c3cede]" aria-label="من" [(ngModel)]="periodFrom" />
@@ -152,10 +153,10 @@ export class IncentiveDetails {
   ];
   protected readonly pageRows = computed(() => this.s().lines.slice((this.page() - 1) * 10, this.page() * 10));
   protected readonly totals = computed(() => {
-    const n = (v: string) => +v.replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace('٫', '.').replace(/[^\d.]/g, '') || 0;
+    const n = num;
     const sum = this.s().lines.reduce((a, l) => a + n(l.net), 0);
-    if (!this.s().lines.length) return { entitled: '٠٫٠٠', net: '٠٫٠٠' };
-    const f = sum.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (!this.s().lines.length) return { entitled: '0.00', net: '0.00' };
+    const f = fmt(sum, 2);
     return { entitled: this.isNew() ? f : this.s().totalEntitled, net: this.isNew() ? f : this.s().totalNet };
   });
 

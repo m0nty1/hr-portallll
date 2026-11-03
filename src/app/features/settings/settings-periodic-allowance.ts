@@ -1,3 +1,5 @@
+import { ConfirmService } from '../../shared/ui/confirm';
+import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PeriodicAllowanceRow } from '../../shared/data/models';
@@ -12,7 +14,7 @@ import { SettingsPills } from './settings-pills';
 /** Screen 28 – نسبة العلاوة الدورية (/settings/periodic-allowance). Date-range toolbar + "تحديث النسب". */
 @Component({
   selector: 'app-settings-periodic-allowance',
-  imports: [PageHeader, Icon, FormsModule, Pagination, SettingsPills],
+  imports: [AppDatePipe, PageHeader, Icon, FormsModule, Pagination, SettingsPills],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="نسبة العلاوة الدورية" [breadcrumb]="[{ label: 'الإعدادات', link: '/settings/system' }, { label: 'نسبة العلاوة الدورية' }]" />
@@ -47,7 +49,7 @@ import { SettingsPills } from './settings-pills';
                   </tr>
                 } @else {
                   <tr>
-                    <td class="td text-gray-800">{{ r.name }}</td><td class="td text-gray-500">{{ r.date }}</td><td class="td">{{ r.rate }}</td>
+                    <td class="td text-gray-800">{{ r.name }}</td><td class="td text-gray-500">{{ r.date | appDate }}</td><td class="td">{{ r.rate }}</td>
                     <td class="td"><div class="flex justify-center gap-2">
                       <button type="button" class="icon-btn-delete" (click)="remove(r)" aria-label="حذف"><app-icon name="delete" [size]="16" /></button>
                       <button type="button" class="icon-btn-edit" (click)="edit(r)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
@@ -64,6 +66,7 @@ import { SettingsPills } from './settings-pills';
   `,
 })
 export class SettingsPeriodicAllowance {
+  private readonly dialog = inject(ConfirmService);
   private readonly svc = inject(SettingsService);
   private readonly toast = inject(ToastService);
   protected readonly rows = signal<PeriodicAllowanceRow[]>([]);
@@ -82,7 +85,7 @@ export class SettingsPeriodicAllowance {
   refresh() { this.svc.refreshPeriodicAllowance({ from: this.from, to: this.to }).subscribe(() => { this.load(); this.toast.success('تم تحديث النسب'); }); }
   edit(r: PeriodicAllowanceRow) { this.d = { ...r }; this.editing.set(r); }
   save() { const old = this.editing(); this.rows.update((rs) => rs.map((r) => (r === old ? { ...this.d } : r))); this.editing.set(null); this.toast.success('تم الحفظ'); }
-  remove(r: PeriodicAllowanceRow) { if (confirm(`حذف ${r.name}؟`)) this.rows.update((rs) => rs.filter((x) => x !== r)); }
+  async remove(r: PeriodicAllowanceRow) { if (await this.dialog.ask(`حذف ${r.name}؟`)) this.rows.update((rs) => rs.filter((x) => x !== r)); }
   export() { exportCsv('نسبة-العلاوة-الدورية', ['اسم الموظف', 'التاريخ', 'النسبة'], this.view().map((r) => [r.name, r.date, r.rate])); }
   print() { printPage(); }
 }

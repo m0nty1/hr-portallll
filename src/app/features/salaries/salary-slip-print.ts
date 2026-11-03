@@ -10,10 +10,10 @@ import { ToastService } from '../../shared/ui/toast';
 interface SlipLine { name: string; amount: string; }
 interface Slip { employee: string; code: string; department: string; period: string; earnings: SlipLine[]; deductions: SlipLine[]; totalEarnings: string; totalDeductions: string; net: string; }
 const MOCK_SLIP = (employee: string, period: string): Slip => ({
-  employee, code: '٠٠٠٦٧', department: 'الإدارة العامة للشئون الفنية', period,
-  earnings: [{ name: 'المرتب الأساسي', amount: '٧٨٦١٫١٥' }, { name: 'علاوة دورية', amount: '٧٨٦٫١٢' }, { name: 'بدل طبيعة عمل', amount: '٧٥٠٫٠٠' }, { name: 'حافز دوري', amount: '٧٨٦٫١٢' }],
-  deductions: [{ name: 'التأمينات الاجتماعية', amount: '٨٦٤٫٧٣' }, { name: 'ضريبة كسب العمل', amount: '٤١٢٫٥٠' }, { name: 'قسط سلفة', amount: '٣٠٠٫٠٠' }],
-  totalEarnings: '١٠١٨٣٫٣٩', totalDeductions: '١٥٧٧٫٢٣', net: '٨٦٠٦٫١٦',
+  employee, code: '00067', department: 'الإدارة العامة للشئون الفنية', period,
+  earnings: [{ name: 'المرتب الأساسي', amount: '7861.15' }, { name: 'علاوة دورية', amount: '786.12' }, { name: 'بدل طبيعة عمل', amount: '750.00' }, { name: 'حافز دوري', amount: '786.12' }],
+  deductions: [{ name: 'التأمينات الاجتماعية', amount: '864.73' }, { name: 'ضريبة كسب العمل', amount: '412.50' }, { name: 'قسط سلفة', amount: '300.00' }],
+  totalEarnings: '10183.39', totalDeductions: '1577.23', net: '8606.16',
 });
 
 /** Screen 18 – طباعة مفردات المرتب (/salaries/salary-slip). Pick employee/month/year, then print the slip (window.print + print CSS). */

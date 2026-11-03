@@ -1,3 +1,5 @@
+import { ConfirmService } from '../../shared/ui/confirm';
+import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AttendanceService } from '../../shared/data/attendance.service';
@@ -19,7 +21,7 @@ const COLORS: Record<PenaltyType, string> = {
 /** Screen 04 – الجزاءات والعقوبات (/attendance/penalties). */
 @Component({
   selector: 'app-penalties-report',
-  imports: [PageHeader, AttendanceFilters, Pagination, TableState, Icon, FormsModule],
+  imports: [AppDatePipe, PageHeader, AttendanceFilters, Pagination, TableState, Icon, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="الجزاءات والعقوبات" [breadcrumb]="[{ label: 'الحضور والانصراف' }, { label: 'الجزاءات' }]" />
@@ -58,10 +60,10 @@ const COLORS: Record<PenaltyType, string> = {
                     <td class="td text-gray-400">{{ (list.page() - 1) * list.pageSize() + i + 1 }}</td>
                     <td class="td font-semibold text-gray-800">{{ r.name }}</td>
                     <td class="td text-center"><span class="pill" [class]="colors[r.type]">{{ r.type }}</span></td>
-                    <td class="td text-gray-500">{{ r.penaltyDate }}</td>
+                    <td class="td text-gray-500">{{ r.penaltyDate | appDate }}</td>
                     <td class="td text-center font-bold text-navy">{{ r.days || '—' }}</td>
                     <td class="td text-gray-600">{{ r.decisionNo }}</td>
-                    <td class="td text-gray-500">{{ r.decisionDate }}</td>
+                    <td class="td text-gray-500">{{ r.decisionDate | appDate }}</td>
                     <td class="td text-gray-500">{{ r.reason }}</td>
                     <td class="td"><div class="flex justify-center gap-2">
                       <button type="button" class="icon-btn-edit" (click)="edit(r)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
@@ -81,6 +83,7 @@ const COLORS: Record<PenaltyType, string> = {
   `,
 })
 export class PenaltiesReport {
+  private readonly dialog = inject(ConfirmService);
   private readonly svc = inject(AttendanceService);
   private readonly toast = inject(ToastService);
   private filter: Partial<AttendanceFilter> = {};
@@ -107,8 +110,8 @@ export class PenaltiesReport {
       this.toast.success('تم حفظ الجزاء');
     });
   }
-  remove(r: PenaltyRow) {
-    if (!confirm(`حذف جزاء ${r.name}؟`)) return;
+  async remove(r: PenaltyRow) {
+    if (!(await this.dialog.ask(`حذف جزاء ${r.name}؟`))) return;
     this.svc.deletePenalty(r.id).subscribe(() => { this.list.rows.update((rs) => rs.filter((x) => x !== r)); this.toast.success('تم الحذف'); });
   }
   export() {

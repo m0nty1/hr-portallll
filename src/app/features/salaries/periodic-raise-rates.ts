@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../shared/ui/confirm';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -72,6 +73,7 @@ import { ToastService } from '../../shared/ui/toast';
   `,
 })
 export class PeriodicRaiseRates {
+  private readonly dialog = inject(ConfirmService);
   private readonly svc = inject(SalariesService);
   private readonly toast = inject(ToastService);
   protected readonly lk = toSignal(inject(LookupsService).all$);
@@ -101,8 +103,8 @@ export class PeriodicRaiseRates {
       this.rows.update((rs) => rs.map((r) => (r.id === this.d.id ? { ...this.d } : r))); this.editing.set(null); this.toast.success('تم الحفظ');
     });
   }
-  remove(r: EmployeeRate) {
-    if (!confirm(`حذف ${r.name}؟`)) return;
+  async remove(r: EmployeeRate) {
+    if (!(await this.dialog.ask(`حذف ${r.name}؟`))) return;
     this.svc.deleteRate(r.id).subscribe(() => { this.rows.update((rs) => rs.filter((x) => x.id !== r.id)); this.toast.success('تم الحذف'); });
   }
 }

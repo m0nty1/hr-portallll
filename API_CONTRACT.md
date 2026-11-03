@@ -1,14 +1,14 @@
 # API Contract (expected by the front-end)
 
-Base: `environment.apiUrl` (default `/api`). JSON. Auth: `Authorization: Bearer <token>`. Paged lists return
+Base: `environment.apiUrl` (default `/api`). JSON. **Dates: ISO `yyyy-mm-dd`** (the UI formats them as dd/MM/yyyy). **Numbers: plain JSON numbers or Latin-digit strings** (the UI shows Latin digits with thousands separators). Auth: `Authorization: Bearer <token>`. Paged lists return
 `{ items: T[], total: number, page: number, pageSize: number }` and accept `page`, `pageSize`.
 Types are in `src/app/shared/data/models.ts`; sample payloads = `mock-data.ts`.
 
 ## Auth & lookups
 | Method | URL | Notes |
 |---|---|---|
-| POST | /auth/login | `{username,password}` → `{token,user:{id,name,role,avatar,permissions[]}}` |
-| GET | /lookups | all dropdown lists (`Lookups`) – cached once |
+| POST | /auth/login | `{username,password}` → `{token,user:{id,name,role,avatar,permissions[]}}`. Permission keys: `hr.view`, `hr.edit`, `salaries.view`, `salaries.edit`, `salaries.calculate`, `salaries.approve`, `reports.view`, `settings.manage` (see `core/auth/permissions.ts`). The UI hides menu items/buttons and blocks routes accordingly; **the backend must still enforce them on every endpoint**. |
+| GET | /lookups | all dropdown lists (`Lookups`). Must be built from the same tables as `/settings/lookups/*` (banks, sectors, departments, grades, hiring-types, cost-centers…) so there is one source of truth. The UI re-fetches it after every settings save. |
 | GET | /dashboard/stats | `HomeStats` (home cards) |
 
 ## Employees / HR
@@ -43,6 +43,6 @@ Types are in `src/app/shared/data/models.ts`; sample payloads = `mock-data.ts`.
 | GET | /reports/:id/run | report output (PDF) |
 
 ## Settings
-| GET / POST / PUT / DELETE | /settings/lookups/{slug}[/:code] | 21 lookup tables (screens 31/32). Row = `{c0,c1,…}` matching column order in `lookup-tabs.config.ts`; replace with named fields when the backend schema is fixed. Slugs: banks, branches, sectors, engineering, cost-centers, departments, job-groups, jobs, job-status, hiring-types, grades, qualifications, installment-groups, installment-accounts, installment-types, tax-groups, bank-groups, disbursement-types, financial-constants, tickets, holidays |
+| GET / POST / PUT / DELETE | /settings/lookups/{slug}[/:code] | 21 lookup tables (screens 31/32). Row = named fields per table (see `cols[].key` in `src/app/features/settings/lookup-tabs.config.ts`, e.g. banks → `{code,name,swiftCode}`, grades → `{code,name,rankCode,scaleStart,…}`). Rows are identified by `code` (tickets use `id`). Dates are ISO `yyyy-mm-dd`, booleans for checkbox columns. Slugs: banks, branches, sectors, engineering, cost-centers, departments, job-groups, jobs, job-status, hiring-types, grades, qualifications, installment-groups, installment-accounts, installment-types, tax-groups, bank-groups, disbursement-types, financial-constants, tickets, holidays |
 | GET | /settings/disbursement-groups · /settings/excel-groups · /settings/tax-groups | CodeName[] (27) |
 | GET / POST | /settings/periodic-allowance[/refresh] | `?from=&to=` (28) |
