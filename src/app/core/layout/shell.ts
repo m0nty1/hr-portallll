@@ -13,8 +13,9 @@ import { Sidebar } from './sidebar';
         <div class="fixed inset-0 z-30 bg-black/40 md:hidden" (click)="layout.closeMobile()"></div>
       }
       <app-sidebar />
-      <div class="flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 md:mr-[68px] print:!mr-0"
-        [style.margin-right]="layout.expanded() ? '224px' : null">
+      <!-- Content keeps a fixed 68px gutter on desktop; the sidebar expands over it on hover instead of pushing it,
+           and touch never expands it (it only opens as the mobile drawer). -->
+      <div class="flex-1 flex flex-col min-h-screen min-w-0 md:mr-[68px] print:!mr-0">
         <router-outlet />
       </div>
     </div>

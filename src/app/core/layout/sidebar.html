@@ -1,8 +1,8 @@
 <aside
-  (mouseenter)="layout.expanded.set(true)"
-  (mouseleave)="layout.expanded.set(false)"
+  (pointerenter)="$event.pointerType === 'mouse' && layout.expanded.set(true)"
+  (pointerleave)="layout.expanded.set(false)"
   class="fixed right-0 top-0 bottom-0 z-40 flex flex-col bg-navy transition-all duration-300 overflow-hidden translate-x-full md:translate-x-0 no-print"
-  [class]="layout.mobileOpen() ? '!translate-x-0 w-[224px]' : (layout.expanded() ? 'md:w-[224px]' : 'md:w-[68px]')"
+  [class]="layout.mobileOpen() ? '!translate-x-0 w-[224px]' : (layout.expanded() ? 'md:w-[224px] shadow-2xl' : 'md:w-[68px]')"
 >
   <!-- Logo -->
   <div class="shrink-0 overflow-hidden border-b border-navy-light">

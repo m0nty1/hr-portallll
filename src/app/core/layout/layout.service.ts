@@ -9,5 +9,5 @@ export class LayoutService {
   readonly mobileOpen = signal(false);
 
   toggleMobile() { this.mobileOpen.update((v) => !v); }
-  closeMobile() { this.mobileOpen.set(false); }
+  closeMobile() { this.mobileOpen.set(false); this.expanded.set(false); }
 }
