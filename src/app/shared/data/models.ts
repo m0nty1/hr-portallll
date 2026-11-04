@@ -10,7 +10,7 @@ export interface EmployeeFilter {
   jobStatus?: string; costCenter?: string; birthFrom?: string; birthTo?: string; gradeFrom?: string; gradeTo?: string;
   appointFrom?: string; appointTo?: string; page?: number; pageSize?: number;
 }
-export interface FamilyMember { name: string; relation: string; dob: string; }
+export interface FamilyMember { name: string; relation: string; dob: string; travel?: string; insurance?: string; familyCare?: string; }
 export interface RaiseRow { date: string; base: string; value: string; }
 export interface EmployeeProfile {
   code: string; name: string; jobTitle: string; active: boolean; nationalId: string; birthDate: string;
@@ -24,7 +24,10 @@ export interface SalaryVariables {
 }
 
 export type LeaveType = 'اعتيادي' | 'مرضي' | 'عارضة' | 'مأمورية';
-export interface AbsenceRow { id: number; name: string; type: LeaveType; days: number; from: string; to: string; }
+export interface AbsenceRow { id: number; name: string; type: LeaveType; days: number; from: string; to: string; /** Remaining balance for this leave type (null = not counted, e.g. مأمورية). Calculated by the server. */ balance?: number | null; }
+export interface LeaveBucket { annual: number; used: number; left: number; }
+/** GET /attendance/leave-balances — one row per employee per calendar year. */
+export interface LeaveBalanceRow { name: string; year: number; regular: LeaveBucket; casual: LeaveBucket; sick: LeaveBucket; }
 export type PenaltyType = 'حرمان من مكافأة' | 'خصم مالي' | 'إنذار' | 'خصم يوم';
 export interface PenaltyRow { id: number; name: string; type: PenaltyType; penaltyDate: string; days: number; decisionNo: string; decisionDate: string; reason: string; }
 
@@ -56,5 +59,6 @@ export interface Lookups {
   sectors: string[]; departments: string[]; banks: string[]; grades: string[]; appointTypes: string[];
   jobStatuses: string[]; costCenters: string[]; employees: string[]; itemGroups: string[]; disbursementTypes: string[];
   incentiveTypes: string[]; months: string[]; years: string[]; fiscalYears: string[];
+  jobs?: string[]; engineering?: string[]; qualifications?: string[]; qualificationTypes?: string[]; installmentTypes?: string[];
 }
 export interface HomeStats { employees: number; pendingRequests: number; noTax: number; noPension: number; monthlyReports: number; activeDepartments: number; }

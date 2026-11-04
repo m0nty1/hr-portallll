@@ -19,6 +19,9 @@ Types are in `src/app/shared/data/models.ts`; sample payloads = `mock-data.ts`.
 | GET / PUT | /employees/:code/salary-variables | `SalaryVariables` (06c/06g, 17) — saved together with the profile; the UI reports each result separately |
 | GET | /employees/:id/salary-variables | `SalaryVariables` (06c, 17) |
 | GET | /attendance/absences | department, employee, type, from, to → Page<AbsenceRow> |
+| POST | /attendance/absences | create a leave (no id) → stored row with id and recalculated `balance` |
+| PUT / DELETE | /attendance/absences/:id | update / delete a leave |
+| GET | /attendance/leave-balances | LeaveBalanceRow[] (filters: department, employee, year) — annual / used / left per type (regular, casual, sick) |
 | GET | /attendance/penalties | Page<PenaltyRow> (filters: department, employee, type, from, to) |
 | POST | /attendance/penalties | create (no id in body) → returns the stored row with its id |
 | PUT / DELETE | /attendance/penalties/:id | update / delete |

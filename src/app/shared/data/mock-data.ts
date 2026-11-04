@@ -1,7 +1,7 @@
 /* Mock data copied from the approved prototype. Used only while environment.useMock = true. */
 import {
   AbsenceRow, AllocationItem, Bank, CodeName, CostCenter, Department, Employee, EmployeeItem, EmployeeProfile,
-  EmployeeRate, ExcelGroup, HomeStats, IncentiveSheet, IncentiveSheetDetails, Installment, ItemDependency, Lookups,
+  EmployeeRate, ExcelGroup, HomeStats, IncentiveSheet, IncentiveSheetDetails, Installment, ItemDependency, LeaveBalanceRow, Lookups,
   NonStaffDisbursement, NonStaffLine, PayrollSummary, PenaltyRow, PeriodicAllowanceRow, SalaryItem, SalaryItemGroup,
   SalaryVariables,
 } from './models';
@@ -50,7 +50,7 @@ export const MOCK_PROFILE: EmployeeProfile = {
   nationalId: '26804063800577', birthDate: '1968-04-06',
   org: { 'القطاع': 'المركز الرئيسي', 'الهندسة': '—', 'الادارة': 'الإدارة العامة لوسائل النقل', 'الوظيفة': 'اخصائي محاسبة', 'الدرجة الوظيفية': 'الدرجة الأولى', 'تاريخ الدرجة': '2024-07-01', 'نوع التعيين': 'دائم', 'تاريخ التعيين': '1968-04-06', 'مركز التكلفة': '871' },
   personal: { 'كود': '9480', 'اسم الموظف': 'محمد أنور أحمد محمد', 'English Name': 'MOHAMED ANWER AHMED MOHAMED', 'تاريخ الميلاد': '1968-04-06', 'الرقم القومي': '26804026800577', 'رقم التأمينات': '781001', 'رقم التليفون': '01227965161', 'الديانة': 'مسلم', 'الحالة الاجتماعية': 'متزوج', 'عدد الأبناء': '2', 'النوع': 'ذكر', 'العنوان': 'سنورس - بولاق', 'الحالة الوظيفية': 'عامل', 'تاريخ انهاء الخدمة': '—', 'سبب انهاء الخدمة': '—', 'عدد المستفيدين من العلاج الأسري': '3' },
-  family: [{ name: 'أحمد محمد أنور أحمد', relation: 'ابن', dob: '2001-07-14' }, { name: 'عبدالرحمن محمد أنور أحمد', relation: 'ابن', dob: '2003-03-23' }],
+  family: [{ name: 'أحمد محمد أنور أحمد', relation: 'ابن', dob: '2001-07-14', travel: 'تذكرة كاملة', insurance: 'ابن أو ابنة', familyCare: 'مشترك' }, { name: 'عبدالرحمن محمد أنور أحمد', relation: 'ابن', dob: '2003-03-23', travel: 'نصف تذكرة', insurance: 'ابن أو ابنة', familyCare: 'مشترك' }, { name: 'منى سعيد حسن', relation: 'زوجة', dob: '1987-05-12', travel: 'لا يوجد', insurance: 'زوجة لا تعمل', familyCare: 'غير مشترك' }],
   job: { 'الوظيفة': 'اخصائي محاسبة', 'المؤهل الدراسي': 'مؤهل عالي', 'نوع المؤهل': 'بكالوريوس تجارة', 'تاريخ الحصول عليه': '1990', 'مكان الحصول عليه': 'جامعة القاهرة', 'الموقف من التجنيد': 'أدى الخدمة', 'تاريخ التجنيد': '1992', 'مدة التجنيد': '18 شهراً' },
   raises: [{ date: '2024-07-01', base: '9,600', value: '450' }, { date: '2023-07-01', base: '9,150', value: '450' }, { date: '2022-07-01', base: '8,700', value: '400' }, { date: '2021-07-01', base: '8,300', value: '350' }, { date: '2020-07-01', base: '7,950', value: '300' }],
 };
@@ -66,13 +66,21 @@ export const MOCK_SALARY_VARS: SalaryVariables = {
 };
 
 export const MOCK_ABSENCE: AbsenceRow[] = [
-  { id: 1, name: 'يونس مجد داود يونس', type: 'اعتيادي', days: 3, from: '2026-05-01', to: '2026-05-03' },
-  { id: 2, name: 'أحمد سامي عبدالله', type: 'مرضي', days: 7, from: '2026-05-10', to: '2026-05-16' },
-  { id: 3, name: 'محمد علي حسن', type: 'عارضة', days: 2, from: '2026-05-20', to: '2026-05-21' },
-  { id: 4, name: 'خالد إبراهيم الشيخ', type: 'مأمورية', days: 5, from: '2026-05-05', to: '2026-05-09' },
-  { id: 5, name: 'عمر عبدالرحمن فارس', type: 'اعتيادي', days: 14, from: '2026-05-15', to: '2026-05-28' },
-  { id: 6, name: 'سمير أحمد الجوهري', type: 'مرضي', days: 3, from: '2026-05-08', to: '2026-05-10' },
+  { id: 1, name: 'يونس مجد داود يونس', type: 'اعتيادي', days: 3, from: '2026-05-01', to: '2026-05-03', balance: 18 },
+  { id: 2, name: 'أحمد سامي عبدالله', type: 'مرضي', days: 7, from: '2026-05-10', to: '2026-05-16', balance: 0 },
+  { id: 3, name: 'محمد علي حسن', type: 'عارضة', days: 2, from: '2026-05-20', to: '2026-05-21', balance: 4 },
+  { id: 4, name: 'خالد إبراهيم الشيخ', type: 'مأمورية', days: 5, from: '2026-05-05', to: '2026-05-09', balance: null },
+  { id: 5, name: 'عمر عبدالرحمن فارس', type: 'اعتيادي', days: 14, from: '2026-05-15', to: '2026-05-28', balance: 0 },
+  { id: 6, name: 'سمير أحمد الجوهري', type: 'مرضي', days: 3, from: '2026-05-08', to: '2026-05-10', balance: 12 },
 ];
+
+export const MOCK_LEAVE_BALANCES: LeaveBalanceRow[] = [
+  ['يونس مجد داود يونس', 3, 0, 0], ['أحمد سامي عبدالله', 5, 1, 15], ['محمد علي حسن', 7, 2, 0],
+  ['خالد إبراهيم الشيخ', 10, 3, 2], ['عمر عبدالرحمن فارس', 21, 6, 0], ['سمير أحمد الجوهري', 9, 0, 3],
+].map(([name, r, c, s]) => ({
+  name: name as string, year: 2026,
+  regular: { annual: 21, used: +r, left: 21 - +r }, casual: { annual: 6, used: +c, left: 6 - +c }, sick: { annual: 15, used: +s, left: 15 - +s },
+}));
 
 export const MOCK_PENALTIES: PenaltyRow[] = [
   { id: 1, name: 'يونس مجد داود يونس', type: 'حرمان من مكافأة', penaltyDate: '2026-05-10', days: 30, decisionNo: '2026/123', decisionDate: '2026-05-08', reason: 'تأخر متكرر' },

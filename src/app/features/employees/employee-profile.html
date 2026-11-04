@@ -53,14 +53,51 @@
           </div>
         </section>
         <section class="card p-5">
-          <div class="flex items-center gap-2 mb-4 text-brand"><app-icon name="users" [size]="20" /><h2 class="font-bold text-navy text-base">بيان الأسرة</h2></div>
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-2 text-brand"><app-icon name="users" [size]="20" /><h2 class="font-bold text-navy text-base">بيان الأسرة</h2></div>
+            <button *appCan="'hr.edit'" type="button" class="btn-primary" [disabled]="familyEd.editing() || editing()" (click)="addFamily()"><app-icon name="plus" [size]="16" /> إضافة فرد من الأسرة</button>
+          </div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm zebra-table">
-              <thead><tr class="table-head"><th class="th">الاسم</th><th class="th">درجة القرابة</th><th class="th">تاريخ الميلاد</th></tr></thead>
+              <thead><tr class="table-head">
+                <th class="th">الاسم</th><th class="th">درجة القرابة</th><th class="th">تاريخ الميلاد</th><th class="th">تذاكر السفر</th>
+                <th class="th">التأمين الصحي الشامل</th><th class="th text-center">العلاج الأسري</th><th class="th text-center w-28">إجراءات</th>
+              </tr></thead>
               <tbody>
-                @for (m of p.family; track m.name) {
-                  <tr class="border-b border-gray-100"><td class="td text-gray-800 font-medium">{{ m.name }}</td><td class="td text-gray-500">{{ m.relation }}</td><td class="td text-gray-500">{{ m.dob | appDate }}</td></tr>
-                } @empty { <tr><td colspan="3" class="td text-center text-gray-400">لا يوجد</td></tr> }
+                @for (m of familyRows(); track $index; let i = $index) {
+                  @if (familyEd.index() === i) {
+                    <tr class="row-edit">
+                      <td class="td"><input class="input-sm w-full min-w-40" [(ngModel)]="familyEd.draft.name" aria-label="الاسم" /></td>
+                      <td class="td"><select class="input-sm" [(ngModel)]="familyEd.draft.relation" aria-label="درجة القرابة">@for (o of relations; track o) { <option>{{ o }}</option> }</select></td>
+                      <td class="td"><input type="date" class="input-sm w-36" [(ngModel)]="familyEd.draft.dob" aria-label="تاريخ الميلاد" /></td>
+                      <td class="td"><select class="input-sm" [(ngModel)]="familyEd.draft.travel" aria-label="تذاكر السفر">@for (o of travelOpts; track o) { <option>{{ o }}</option> }</select></td>
+                      <td class="td"><select class="input-sm" [(ngModel)]="familyEd.draft.insurance" aria-label="التأمين الصحي الشامل">@for (o of insuranceOpts; track o) { <option>{{ o }}</option> }</select></td>
+                      <td class="td text-center"><select class="input-sm" [(ngModel)]="familyEd.draft.familyCare" aria-label="العلاج الأسري">@for (o of careOpts; track o) { <option>{{ o }}</option> }</select></td>
+                      <td class="td"><div class="flex justify-center gap-2">
+                        <button type="button" class="icon-btn-save" [disabled]="rowSaving()" (click)="saveFamily()" aria-label="حفظ"><app-icon name="check" [size]="16" /></button>
+                        <button type="button" class="icon-btn-cancel" (click)="cancelFamily()" aria-label="إلغاء"><app-icon name="close" [size]="16" /></button>
+                      </div></td>
+                    </tr>
+                  } @else {
+                    <tr>
+                      <td class="td text-gray-800 font-semibold">{{ m.name }}</td>
+                      <td class="td text-gray-600">{{ m.relation }}</td>
+                      <td class="td text-gray-600">{{ m.dob | appDate }}</td>
+                      <td class="td text-gray-600">{{ m.travel || '—' }}</td>
+                      <td class="td text-gray-600">{{ m.insurance || '—' }}</td>
+                      <td class="td text-center">
+                        @if (m.familyCare === 'مشترك') { <span class="pill bg-green-50 text-green-600 font-bold">مشترك</span> }
+                        @else { <span class="text-gray-400">{{ m.familyCare || '—' }}</span> }
+                      </td>
+                      <td class="td"><div class="flex justify-center gap-2">
+                        <ng-container *appCan="'hr.edit'">
+                          <button type="button" class="icon-btn-edit" [disabled]="familyEd.editing() || editing()" (click)="familyEd.edit(familyRows(), i)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
+                          <button type="button" class="icon-btn-delete" [disabled]="familyEd.editing() || editing()" (click)="removeFamily(i)" aria-label="حذف"><app-icon name="delete" [size]="16" /></button>
+                        </ng-container>
+                      </div></td>
+                    </tr>
+                  }
+                } @empty { <tr><td colspan="7" class="td text-center text-gray-400">لا يوجد</td></tr> }
               </tbody>
             </table>
           </div>
@@ -77,22 +114,37 @@
       @case ('salary') { <app-salary-variables [data]="editing() ? salaryDraft() : (savedSalary() ?? salary())" [editable]="editing()" /> }
       @case ('raises') {
         <section class="card p-5">
-          <div class="flex items-center gap-2 mb-4 text-brand"><app-icon name="trend" [size]="20" /><h2 class="font-bold text-navy text-base">تدرج العلاوات</h2></div>
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-2 text-brand"><app-icon name="trend" [size]="20" /><h2 class="font-bold text-navy text-base">تدرج العلاوات</h2></div>
+            <button *appCan="'hr.edit'" type="button" class="btn-primary" [disabled]="raiseEd.editing() || editing()" (click)="addRaise()"><app-icon name="plus" [size]="16" /> إضافة علاوة</button>
+          </div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm zebra-table">
-              <thead><tr class="table-head"><th class="th">تاريخ العلاوة</th><th class="th">الأساسي</th><th class="th">قيمة العلاوة</th></tr></thead>
+              <thead><tr class="table-head"><th class="th">تاريخ العلاوة</th><th class="th">الأساسي</th><th class="th">قيمة العلاوة</th><th class="th text-center w-28">إجراءات</th></tr></thead>
               <tbody>
-                @for (r of p.raises; track $index) {
-                  @if (editing()) {
-                    <tr class="border-b border-gray-100 row-edit">
-                      <td class="td"><input class="input-sm" [(ngModel)]="r.date" aria-label="تاريخ العلاوة" /></td>
-                      <td class="td"><input class="input-sm" [(ngModel)]="r.base" aria-label="الأساسي" /></td>
-                      <td class="td"><input class="input-sm" [(ngModel)]="r.value" aria-label="قيمة العلاوة" /></td>
+                @for (r of raiseRows(); track $index; let i = $index) {
+                  @if (raiseEd.index() === i) {
+                    <tr class="row-edit">
+                      <td class="td"><input type="date" class="input-sm w-40" [(ngModel)]="raiseEd.draft.date" aria-label="تاريخ العلاوة" /></td>
+                      <td class="td"><input class="input-sm w-32" inputmode="decimal" [(ngModel)]="raiseEd.draft.base" aria-label="الأساسي" /></td>
+                      <td class="td"><input class="input-sm w-32" inputmode="decimal" [(ngModel)]="raiseEd.draft.value" aria-label="قيمة العلاوة" /></td>
+                      <td class="td"><div class="flex justify-center gap-2">
+                        <button type="button" class="icon-btn-save" [disabled]="rowSaving()" (click)="saveRaise()" aria-label="حفظ"><app-icon name="check" [size]="16" /></button>
+                        <button type="button" class="icon-btn-cancel" (click)="cancelRaise()" aria-label="إلغاء"><app-icon name="close" [size]="16" /></button>
+                      </div></td>
                     </tr>
                   } @else {
-                    <tr class="border-b border-gray-100"><td class="td text-gray-800 font-medium">{{ r.date | appDate }}</td><td class="td text-gray-500">{{ r.base }}</td><td class="td text-gray-500">{{ r.value }}</td></tr>
+                    <tr>
+                      <td class="td text-gray-800 font-medium">{{ r.date | appDate }}</td><td class="td text-gray-600">{{ r.base }}</td><td class="td text-gray-600">{{ r.value }}</td>
+                      <td class="td"><div class="flex justify-center gap-2">
+                        <ng-container *appCan="'hr.edit'">
+                          <button type="button" class="icon-btn-edit" [disabled]="raiseEd.editing() || editing()" (click)="raiseEd.edit(raiseRows(), i)" aria-label="تعديل"><app-icon name="edit" [size]="16" /></button>
+                          <button type="button" class="icon-btn-delete" [disabled]="raiseEd.editing() || editing()" (click)="removeRaise(i)" aria-label="حذف"><app-icon name="delete" [size]="16" /></button>
+                        </ng-container>
+                      </div></td>
+                    </tr>
                   }
-                }
+                } @empty { <tr><td colspan="4" class="td text-center text-gray-400">لا توجد علاوات</td></tr> }
               </tbody>
             </table>
           </div>

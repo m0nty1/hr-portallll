@@ -34,6 +34,11 @@ export class LookupsService {
       costCenters: s.names('cost-centers', 'code'),
       employees: MOCK_EMPLOYEES.map((e) => e.name),
       disbursementTypes: s.names('disbursement-types'),
+      jobs: s.names('jobs'),
+      engineering: s.names('engineering'),
+      qualifications: s.names('qualifications'),
+      qualificationTypes: [...new Set(s.rows('qualifications').map((r) => String(r['level'] ?? '')).filter(Boolean))],
+      installmentTypes: s.names('installment-types'),
     };
   }
 }

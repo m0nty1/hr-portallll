@@ -34,7 +34,6 @@ export class Home {
       { label: 'استعراض الموظفين', to: '/employees/browse', color: 'text-indigo-500', icon: 'eye' },
       { label: 'كشوف الغياب', to: '/attendance/absence', color: 'text-orange-500', icon: 'calendar' },
       { label: 'الجزاءات', to: '/attendance/penalties', color: 'text-red-500', icon: 'alert' },
-      { label: 'تدرج العلاوات', to: '/salaries/periodic-raise', color: 'text-green-600', icon: 'activity' },
       { label: 'كشوف الترقيات', to: '/hr/promotions', color: 'text-purple-500', icon: 'arrow-up' },
     ] },
     { title: 'المرتبات والحوافز', icon: 'briefcase', items: [

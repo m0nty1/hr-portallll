@@ -1,5 +1,6 @@
 import { CanDirective } from '../../core/auth/permissions';
 import { ConfirmService } from '../../shared/ui/confirm';
+import { LookupsService } from '../../shared/data/lookups.service';
 import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -41,7 +42,7 @@ import { ItemTypePill } from './item-type-pill';
                     <td class="td"><select class="input-sm" [(ngModel)]="d.calculation" aria-label="طريقة الحساب">@for (t of calcs; track t) { <option>{{ t }}</option> }</select></td>
                     <td class="td"><input class="input-sm w-20" [(ngModel)]="d.value" aria-label="قيمة البند" /></td>
                     <td class="td"><select class="input-sm" [(ngModel)]="d.dependsOn" aria-label="يعتمد على بند"><option value="">—</option>@for (x of rows(); track x.id) { <option>{{ x.code }}</option> }</select></td>
-                    <td class="td"><input class="input-sm w-28" [(ngModel)]="d.installmentType" aria-label="نوع القسط" /></td>
+                    <td class="td"><select class="input-sm w-32" [(ngModel)]="d.installmentType" aria-label="نوع القسط"><option value="">—</option>@for (t of installmentTypes(); track t) { <option>{{ t }}</option> }</select></td>
                     <td class="td"><input class="input-sm w-14 text-center" [(ngModel)]="d.order" aria-label="الترتيب" /></td>
                     <td class="td text-center"><input type="checkbox" class="checkbox" [(ngModel)]="d.hasDetails" aria-label="له تفاصيل" /></td>
                     <td class="td"><div class="flex justify-center gap-2">
@@ -93,6 +94,9 @@ export class SalaryItems {
   protected readonly editing = signal<number | null>(null);
   protected readonly types: ItemType[] = ['استحقاق', 'استقطاع', 'أخرى'];
   protected readonly calcs: CalcMethod[] = ['قيمة', 'نسبة', 'حساب'];
+  /** From the settings table «أنواع الأقساط». */
+  private readonly lk = toSignal(inject(LookupsService).all$);
+  protected readonly installmentTypes = () => this.lk()?.installmentTypes ?? [];
   protected d = {} as SalaryItem;
   private isNew = false;
 

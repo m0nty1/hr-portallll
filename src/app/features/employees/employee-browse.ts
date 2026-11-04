@@ -1,4 +1,3 @@
-import { CanDirective } from '../../core/auth/permissions';
 import { AuthService } from '../../core/auth/auth.service';
 import { AppDatePipe } from '../../shared/util/date.pipe';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
@@ -21,7 +20,7 @@ interface Col { field: Field; label: string; options?: string[]; date?: boolean;
 
 @Component({
   selector: 'app-employee-browse',
-  imports: [CanDirective, AppDatePipe, PageHeader, EmployeeFilters, Pagination, TableState, Icon, FormsModule, JobStatusBadge],
+  imports: [AppDatePipe, PageHeader, EmployeeFilters, Pagination, TableState, Icon, FormsModule, JobStatusBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './employee-browse.html',
 })
@@ -46,29 +45,29 @@ export class EmployeeBrowse {
     { field: 'birthDate', label: 'تاريخ الميلاد', date: true },
   ]);
 
-  /** Working copy (edited) vs. last saved copy. */
+  /** Read-only by default; the edit button opens one row at a time (light orange) with save/cancel. */
   protected readonly rows = signal<Employee[]>([]);
-  private saved: Employee[] = [];
-  protected readonly editing = signal<{ row: number; field: Field } | null>(null);
-  protected readonly edited = computed(() => new Set(this.rows().flatMap((r, i) => (JSON.stringify(r) === JSON.stringify(this.saved[i]) ? [] : [i]))));
+  protected readonly editRow = signal<number | null>(null);
+  protected draft = {} as Employee;
   protected readonly saving = signal(false);
 
   constructor() {
     this.list.load();
-    effect(() => { const r = this.list.rows(); this.saved = structuredClone(r); this.rows.set(structuredClone(r)); });
+    effect(() => { const r = this.list.rows(); this.rows.set(structuredClone(r)); this.editRow.set(null); });
   }
 
   onSearch(f: EmployeeFilter) { this.filter = f; this.list.search(); }
-  isEditing(i: number, f: Field) { const e = this.editing(); return e?.row === i && e.field === f; }
-  update(i: number, f: Field, v: string) { this.rows.update((rs) => rs.map((r, k) => (k === i ? { ...r, [f]: v } : r))); }
-
+  edit(i: number) { this.draft = structuredClone(this.rows()[i]); this.editRow.set(i); }
+  cancel() { this.editRow.set(null); }
   save() {
-    const changed = [...this.edited()].map((i) => this.rows()[i]);
+    const i = this.editRow();
+    if (i === null || this.saving()) return;
+    const d = structuredClone(this.draft);
+    if (!String(d.name ?? '').trim()) { this.toast.error('برجاء إدخال اسم الموظف'); return; }
     this.saving.set(true);
-    this.svc.saveMany(changed).subscribe({
-      next: () => { this.saved = structuredClone(this.rows()); this.rows.set([...this.rows()]); this.editing.set(null); this.saving.set(false); this.toast.success('تم حفظ التعديلات'); },
+    this.svc.saveMany([d]).subscribe({
+      next: () => { this.rows.update((rs) => rs.map((r, k) => (k === i ? d : r))); this.editRow.set(null); this.saving.set(false); this.toast.success('تم حفظ التعديلات'); },
       error: () => { this.saving.set(false); this.toast.error('تعذر حفظ التعديلات'); },
     });
   }
-  cancel() { this.rows.set(structuredClone(this.saved)); this.editing.set(null); }
 }
