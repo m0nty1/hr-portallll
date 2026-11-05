@@ -9,6 +9,12 @@ Types are in `src/app/shared/data/models.ts`; sample payloads = `mock-data.ts`.
 | Method | URL | Notes |
 |---|---|---|
 | POST | /auth/login | `{username,password}` → `{token,user:{id,name,role,avatar,permissions[]}}`. Permission keys: `hr.view`, `hr.edit`, `salaries.view`, `salaries.edit`, `salaries.calculate`, `salaries.approve`, `reports.view`, `settings.manage` (see `core/auth/permissions.ts`). The UI hides menu items/buttons and blocks routes accordingly; **the backend must still enforce them on every endpoint**. |
+| POST | /auth/logout | revoke the current token (the UI clears its session either way) |
+| PUT | /auth/me | `{name,email,phone}` → updated user (user may also carry `username, email, phone, department, lastLogin`) |
+| POST | /auth/change-password | `{currentPassword,newPassword}` → 204; 400 with an Arabic `message` if the current password is wrong |
+| GET | /notifications | `[{id, kind: payroll\|leave\|penalty\|employee\|report\|system, title, body, at (ISO), read, link?}]` for the signed-in user, newest first |
+| POST | /notifications/:id/read · /notifications/read-all | mark one / all as read |
+| DELETE | /notifications/:id | remove one notification |
 | GET | /lookups | all dropdown lists (`Lookups`). Must be built from the same tables as `/settings/lookups/*` (banks, sectors, departments, grades, hiring-types, cost-centers…) so there is one source of truth. The UI re-fetches it after every settings save. |
 | GET | /dashboard/stats | `HomeStats` (home cards) |
 
