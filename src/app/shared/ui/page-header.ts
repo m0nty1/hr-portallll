@@ -12,8 +12,8 @@ export interface Crumb { label: string; link?: string; }
   imports: [Icon, RouterLink, NotificationsMenu],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header class="bg-white border-b border-gray-100 px-4 md:px-[25px] py-[13px] flex items-center justify-between sticky top-0 z-10 no-print">
-      <div class="text-right">
+    <header class="bg-white border-b border-gray-100 px-4 md:px-[25px] py-[13px] flex items-center gap-3 md:justify-between sticky top-0 z-10 no-print">
+      <div class="text-right min-w-0 flex-1 md:flex-none">
         <h1 class="text-base md:text-xl font-bold text-navy leading-tight">{{ title() }}</h1>
         <nav class="hidden sm:flex items-center gap-1 text-xs text-gray-400" aria-label="مسار الصفحة">
           @for (c of breadcrumb(); track $index; let last = $last) {
@@ -26,7 +26,8 @@ export interface Crumb { label: string; link?: string; }
           }
         </nav>
       </div>
-      <div class="flex items-center gap-3 flex-row-reverse">
+      <!-- Mobile: menu + bell sit at the right edge, before the title. Desktop: tools on the left. -->
+      <div class="flex items-center gap-2 md:gap-3 order-first md:order-none md:flex-row-reverse">
         <button type="button" (click)="layout.toggleMobile()" aria-label="القائمة"
           class="md:hidden w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100">
           <app-icon name="menu" [size]="20" />
