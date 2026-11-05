@@ -50,6 +50,8 @@ export class Sidebar {
     if (!this.show()) { this.router.navigateByUrl('/account'); return; }
     this.accountOpen.update((v) => !v);
   }
+  /** Mouse left the rail: collapse it. Touch pointers also fire pointerleave on every tap, so they are ignored. */
+  protected closeHover() { this.layout.expanded.set(false); this.accountOpen.set(false); }
   protected leave() { this.accountOpen.set(false); this.layout.closeMobile(); }
   protected async logout() {
     this.leave();

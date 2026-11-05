@@ -1,6 +1,6 @@
 <aside
   (pointerenter)="$event.pointerType === 'mouse' && layout.expanded.set(true)"
-  (pointerleave)="layout.expanded.set(false); accountOpen.set(false)"
+  (pointerleave)="$event.pointerType === 'mouse' && closeHover()"
   class="fixed right-0 top-0 bottom-0 z-40 flex flex-col bg-navy transition-all duration-300 overflow-hidden translate-x-full md:translate-x-0 no-print"
   [class]="layout.mobileOpen() ? '!translate-x-0 w-[224px]' : (layout.expanded() ? 'md:w-[224px] shadow-2xl' : 'md:w-[68px]')"
 >
