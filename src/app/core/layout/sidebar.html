@@ -1,6 +1,6 @@
 <aside
   (pointerenter)="$event.pointerType === 'mouse' && layout.expanded.set(true)"
-  (pointerleave)="layout.expanded.set(false)"
+  (pointerleave)="layout.expanded.set(false); accountOpen.set(false)"
   class="fixed right-0 top-0 bottom-0 z-40 flex flex-col bg-navy transition-all duration-300 overflow-hidden translate-x-full md:translate-x-0 no-print"
   [class]="layout.mobileOpen() ? '!translate-x-0 w-[224px]' : (layout.expanded() ? 'md:w-[224px] shadow-2xl' : 'md:w-[68px]')"
 >
@@ -87,27 +87,37 @@
     }
   </nav>
 
-  <!-- Logout -->
-  <div class="border-t border-navy-light shrink-0">
-    <button type="button" (click)="auth.logout()" [title]="show() ? '' : 'تسجيل الخروج'"
-      class="w-full flex items-center h-12 text-sm font-semibold text-blue-200 hover:text-white hover:bg-[#253872] transition-colors overflow-hidden"
-      [class]="show() ? 'gap-3 px-5' : 'justify-center'">
-      <app-icon name="logout" [size]="20" />
-      @if (show()) { <span class="whitespace-nowrap">تسجيل الخروج</span> }
-    </button>
-  </div>
-
-  <!-- User card -->
-  <div class="mx-2 mb-3 bg-navy-light rounded-xl p-2.5 flex items-center gap-3 shrink-0 overflow-hidden">
-    <img [src]="auth.user().avatar" [alt]="auth.user().name" class="w-9 h-9 rounded-full object-cover shrink-0" />
-    @if (show()) {
-      <div class="flex-1 min-w-0 flex items-center gap-1">
-        <div class="flex-1 min-w-0">
-          <p class="text-white text-xs font-bold truncate">{{ auth.user().name }}</p>
-          <p class="text-blue-300 text-[10px] truncate">{{ auth.user().role }}</p>
-        </div>
-        <app-icon name="chevron-down" [size]="14" class="text-blue-200" />
+  <!-- Account: the one place for the user's profile, password, notifications and logout -->
+  <div class="border-t border-navy-light shrink-0 pt-2">
+    @if (show() && accountOpen()) {
+      <div class="mx-2 mb-1.5 flex flex-col" role="menu" aria-label="حساب المستخدم">
+        @for (l of accountLinks; track l.label) {
+          <a [routerLink]="l.to" [fragment]="l.fragment" (click)="leave()" role="menuitem"
+            class="flex items-center gap-3 h-10 px-3 rounded-lg text-sm text-blue-200 hover:text-white hover:bg-[#253872] transition-colors">
+            <app-icon [name]="l.icon" [size]="18" />
+            <span class="flex-1 whitespace-nowrap">{{ l.label }}</span>
+            @if (l.to === '/notifications' && notifications.unread()) {
+              <span class="min-w-5 h-5 px-1.5 rounded-full bg-brand text-white text-[10px] font-bold flex items-center justify-center">{{ notifications.unread() }}</span>
+            }
+          </a>
+        }
+        <button type="button" (click)="logout()" role="menuitem"
+          class="flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-semibold text-red-300 hover:text-white hover:bg-red-500/20 transition-colors">
+          <app-icon name="logout" [size]="18" /><span class="whitespace-nowrap">تسجيل الخروج</span>
+        </button>
       </div>
     }
+    <button type="button" (click)="accountClick()" [attr.aria-expanded]="show() ? accountOpen() : null"
+      [title]="show() ? '' : 'الملف الشخصي'"
+      class="w-[calc(100%-1rem)] mx-2 mb-3 bg-navy-light hover:bg-[#2b3f7d] rounded-xl p-2.5 flex items-center gap-3 overflow-hidden text-right transition-colors">
+      <img [src]="auth.user().avatar" [alt]="auth.user().name" class="w-9 h-9 rounded-full object-cover shrink-0" />
+      @if (show()) {
+        <span class="flex-1 min-w-0">
+          <span class="block text-white text-xs font-bold truncate">{{ auth.user().name }}</span>
+          <span class="block text-blue-300 text-[10px] truncate">{{ auth.user().role }}</span>
+        </span>
+        <span class="text-blue-200 transition-transform" [class.rotate-180]="!accountOpen()"><app-icon name="chevron-down" [size]="14" /></span>
+      }
+    </button>
   </div>
 </aside>

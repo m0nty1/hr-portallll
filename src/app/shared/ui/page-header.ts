@@ -1,16 +1,15 @@
 import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
 import { LayoutService } from '../../core/layout/layout.service';
 import { Icon } from './icon';
-import { NotificationsMenu, UserMenu } from './header-menus';
+import { NotificationsMenu } from './header-menus';
 
 export interface Crumb { label: string; link?: string; }
 
 @Component({
   selector: 'app-page-header',
-  imports: [Icon, RouterLink, NotificationsMenu, UserMenu],
+  imports: [Icon, RouterLink, NotificationsMenu],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="bg-white border-b border-gray-100 px-4 md:px-[25px] py-[13px] flex items-center justify-between sticky top-0 z-10 no-print">
@@ -33,7 +32,6 @@ export interface Crumb { label: string; link?: string; }
           <app-icon name="menu" [size]="20" />
         </button>
         <app-notifications-menu />
-        <app-user-menu />
         @if (backTo()) {
           <button type="button" (click)="back()"
             class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 border border-gray-200 bg-white rounded-lg px-3 md:px-4 py-2">
@@ -53,7 +51,6 @@ export class PageHeader {
   readonly backTo = input<string>();
 
   protected readonly layout = inject(LayoutService);
-  protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
 
