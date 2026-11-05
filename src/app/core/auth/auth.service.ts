@@ -11,7 +11,13 @@ export interface CurrentUser {
   avatar: string;
   /** Permission keys returned by the backend (e.g. "salaries.calculate"). Empty = no access. */
   permissions: string[];
+  username?: string;
+  email?: string;
+  phone?: string;
+  department?: string;
+  lastLogin?: string;
 }
+export interface ProfileUpdate { name: string; email: string; phone: string; }
 interface LoginResponse { token: string; user: CurrentUser; }
 
 const TOKEN_KEY = 'hr.token.v2';
@@ -37,7 +43,11 @@ export class AuthService {
     // With useMock=false the backend decides (ApiService never returns this object).
     const mock: LoginResponse = {
       token: 'demo-token',
-      user: { id: 'demo', name: 'أحمد محمد', role: 'مدير النظام (ديمو)', permissions: [...ALL_PERMISSIONS], avatar: 'assets/avatar.png' },
+      user: {
+        id: 'demo', name: 'أحمد محمد', role: 'مدير النظام (ديمو)', permissions: [...ALL_PERMISSIONS], avatar: 'assets/avatar.png',
+        username, email: 'ahmed.mohamed@upper-egypt-elec.com.eg', phone: '01001234567', department: 'إدارة تقنية المعلومات',
+        lastLogin: new Date().toISOString(),
+      },
     };
     return this.api.post<LoginResponse>('/auth/login', { username, password }, mock).pipe(
       delay(0),
@@ -50,7 +60,20 @@ export class AuthService {
     );
   }
 
+  /** PUT /auth/me — the user edits their own name, email and phone. */
+  updateProfile(p: ProfileUpdate) {
+    return this.api.put<CurrentUser>('/auth/me', p, () => ({ ...this.user(), ...p })).pipe(
+      tap((u) => { this._user.set(u); this.write(USER_KEY, u); }),
+    );
+  }
+  /** POST /auth/change-password { currentPassword, newPassword } */
+  changePassword(currentPassword: string, newPassword: string) {
+    return this.api.post<void>('/auth/change-password', { currentPassword, newPassword }, () => undefined);
+  }
+
   logout() {
+    // POST /auth/logout lets the server revoke the token; the local session is cleared either way.
+    if (this.token()) this.api.post('/auth/logout', {}, () => null).subscribe({ error: () => {} });
     this.token.set(null);
     this._user.set(GUEST);
     try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch {}

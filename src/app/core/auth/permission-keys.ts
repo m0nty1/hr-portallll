@@ -14,3 +14,11 @@ export const PERMISSIONS = {
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
+
+/** Arabic names shown on the user's profile page. */
+export const PERMISSION_LABELS: Record<Permission, string> = {
+  'hr.view': 'عرض الموارد البشرية', 'hr.edit': 'تعديل الموارد البشرية',
+  'salaries.view': 'عرض المرتبات', 'salaries.edit': 'تعديل المرتبات',
+  'salaries.calculate': 'حساب المرتبات', 'salaries.approve': 'اعتماد الصرف',
+  'reports.view': 'التقارير', 'settings.manage': 'إدارة الإعدادات',
+};

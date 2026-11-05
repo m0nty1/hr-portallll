@@ -18,6 +18,8 @@ export const routes: Routes = [
     canActivateChild: [permissionGuard],
     children: [
       { path: '', title: 'الرئيسية', loadComponent: () => import('./features/home/home').then((m) => m.Home) },
+      { path: 'notifications', title: 'الإشعارات', loadComponent: () => import('./features/account/notifications.page').then((m) => m.NotificationsPage) },
+      { path: 'account', title: 'الملف الشخصي', loadComponent: () => import('./features/account/account.page').then((m) => m.AccountPage) },
 
       // ── الموارد البشرية
       { path: 'employees', title: 'البحث عن موظف', loadComponent: () => import('./features/employees/employee-search').then((m) => m.EmployeeSearch) },
