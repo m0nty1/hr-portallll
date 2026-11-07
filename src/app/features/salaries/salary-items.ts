@@ -105,7 +105,7 @@ export class SalaryItems {
   edit(r: SalaryItem) { this.isNew = false; this.d = { ...r }; this.editing.set(r.id); }
   add() {
     const r: SalaryItem = { id: Date.now(), code: '', type: 'استحقاق', name: '', calculation: 'قيمة', value: '', dependsOn: '', installmentType: '', order: String(this.rows().length + 1).padStart(2, '0'), hasDetails: false };
-    this.rows.update((rs) => [...rs, r]);
+    this.rows.update((rs) => [r, ...rs]); // the new row opens at the top of the grid
     this.edit(r);
     this.isNew = true;
   }

@@ -29,7 +29,7 @@ import { ToastService } from '../../shared/ui/toast';
             <option value="">الكل</option>@for (g of groups(); track g) { <option>{{ g }}</option> }
           </select>
         </label>
-        <button type="button" class="btn-primary" (click)="toast.success('اختر بنداً من الجدول ثم فعّل التخصيص')"><app-icon name="plus" [size]="16" /> إضافة بند</button>
+        <button *appCan="'salaries.edit'" type="button" class="btn-primary" [disabled]="newRow() !== null || editing() !== null || !employee()" (click)="startAdd()"><app-icon name="plus" [size]="16" /> إضافة بند</button>
         <button *appCan="'salaries.edit'" type="button" class="btn-navy" [disabled]="saving()" (click)="save()"><app-icon name="save" [size]="16" /> {{ saving() ? 'جاري الحفظ...' : 'حفظ التخصيص' }}</button>
       </section>
       <section class="card">
@@ -42,6 +42,26 @@ import { ToastService } from '../../shared/ui/toast';
               <th class="th text-center">إجراءات</th>
             </tr></thead>
             <tbody>
+              @if (newRow(); as n) {
+                <tr class="border-b border-gray-100 bg-edit">
+                  <td class="td font-bold text-navy">{{ n.code || '—' }}</td>
+                  <td class="td">
+                    <select class="input-sm min-w-48" [(ngModel)]="n.code" aria-label="اختر البند">
+                      <option value="">اختر البند...</option>
+                      @for (i of unallocated(); track i.code) { <option [value]="i.code">{{ i.code }} — {{ i.name }}</option> }
+                    </select>
+                  </td>
+                  <td class="td text-center text-gray-500">{{ groupOf(n.code) || '—' }}</td>
+                  <td class="td text-center"><select class="input-sm" [(ngModel)]="n.calculation" aria-label="طريقة الحساب"><option>قيمة</option><option>نسبة</option></select></td>
+                  <td class="td text-center"><input class="input-sm w-24 text-center" inputmode="decimal" [(ngModel)]="n.value" aria-label="قيمة البند" /></td>
+                  <td class="td text-center text-xs text-green-600 font-semibold">فعال</td>
+                  <td class="td text-center"><input type="checkbox" class="checkbox" checked disabled aria-label="تخصيص" /></td>
+                  <td class="td"><div class="flex justify-center gap-2">
+                    <button type="button" class="icon-btn-save" [disabled]="saving()" (click)="confirmAdd()" aria-label="حفظ"><app-icon name="check" [size]="16" /></button>
+                    <button type="button" class="icon-btn-cancel" (click)="newRow.set(null)" aria-label="إلغاء"><app-icon name="close" [size]="16" /></button>
+                  </div></td>
+                </tr>
+              }
               @for (r of view(); track r.code) {
                 @let ed = editing() === r.code;
                 <tr class="border-b border-gray-100" [class]="ed ? 'bg-edit' : r.allocated ? 'bg-orange-50/60' : 'bg-white'">
@@ -103,11 +123,34 @@ export class SalaryAllocation {
 
   constructor() { effect((onCleanup) => {
       const e = this.employee();
-      this.items.set([]); this.editing.set(null);
+      this.items.set([]); this.editing.set(null); this.newRow.set(null);
       if (!e) return;
       const sub = this.svc.employeeItems(e).subscribe((r) => this.items.set(r));
       onCleanup(() => sub.unsubscribe()); // latest employee wins
     }); }
+  // ── «إضافة بند»: blank row on top to pick an unallocated item with its calculation and value; saving persists it.
+  protected readonly newRow = signal<{ code: string; calculation: string; value: string } | null>(null);
+  protected readonly unallocated = computed(() => this.items().filter((i) => !i.allocated));
+  groupOf(code: string) { return this.items().find((i) => i.code === code)?.group ?? ''; }
+  startAdd() {
+    if (!this.unallocated().length) { this.toast.error('كل البنود متخصصة للموظف بالفعل'); return; }
+    this.newRow.set({ code: '', calculation: 'قيمة', value: '' });
+  }
+  confirmAdd() {
+    const n = this.newRow();
+    if (!n) return;
+    if (!n.code) { this.toast.error('برجاء اختيار البند'); return; }
+    const v = +String(n.value).replace(/,/g, '');
+    if (!String(n.value).trim() || !(v > 0)) { this.toast.error('برجاء إدخال قيمة البند'); return; }
+    if (n.calculation === 'نسبة' && v > 100) { this.toast.error('النسبة لازم تكون من 1 لـ 100'); return; }
+    const before = this.items();
+    this.items.update((is) => is.map((i) => (i.code === n.code ? { ...i, allocated: true, active: true, calculation: n.calculation as EmployeeItem['calculation'], value: String(n.value) } : i)));
+    this.saving.set(true);
+    this.svc.saveEmployeeItems(this.employee(), structuredClone(this.items())).subscribe({
+      next: () => { this.saving.set(false); this.newRow.set(null); this.toast.success('تمت إضافة البند للموظف'); },
+      error: () => { this.saving.set(false); this.items.set(before); },
+    });
+  }
   patch(r: EmployeeItem, p: Partial<EmployeeItem>) { this.items.update((is) => is.map((i) => (i.code === r.code ? { ...i, ...p } : i))); }
   allocateAll(on: boolean) { const codes = new Set(this.view().map((v) => v.code)); this.items.update((is) => is.map((i) => (codes.has(i.code) ? { ...i, allocated: on, active: on && i.active } : i))); }
   edit(r: EmployeeItem) { this.d = { ...r }; this.editing.set(r.code); }

@@ -22,7 +22,7 @@ import { ToastService } from '../../shared/ui/toast';
         <label class="flex flex-col gap-1 flex-1 w-full"><span class="field-label">المجموعة الرئيسية للبند</span>
           <select class="input" [ngModel]="group()" (ngModelChange)="group.set($event)"><option value="">الكل</option>@for (g of groups(); track g) { <option>{{ g }}</option> }</select>
         </label>
-        <button type="button" class="btn-primary" (click)="toast.success('حدد البنود من الجدول')"><app-icon name="plus" [size]="16" /> إضافة بند</button>
+        <button *appCan="'salaries.edit'" type="button" class="btn-primary" [disabled]="adding() || !key()" (click)="startAdd()"><app-icon name="plus" [size]="16" /> إضافة بند</button>
         <button *appCan="'salaries.edit'" type="button" class="btn-navy" [disabled]="saving()" (click)="save()"><app-icon name="save" [size]="16" /> {{ saving() ? 'جاري الحفظ...' : 'حفظ التخصيص' }}</button>
       </section>
       <section class="card">
@@ -32,6 +32,22 @@ import { ToastService } from '../../shared/ui/toast';
             <th class="th text-center w-24"><input type="checkbox" class="checkbox" aria-label="تحديد الكل" [ngModel]="all()" (ngModelChange)="toggleAll($event)" /></th>
           </tr></thead>
           <tbody>
+            @if (adding()) {
+              <tr class="row-edit">
+                <td class="td font-bold text-navy">{{ newCode || '—' }}</td>
+                <td class="td">
+                  <select class="input-sm min-w-56" [(ngModel)]="newCode" aria-label="اختر البند">
+                    <option value="">اختر البند...</option>
+                    @for (i of unallocated(); track i.code) { <option [value]="i.code">{{ i.code }} — {{ i.name }}</option> }
+                  </select>
+                </td>
+                <td class="td text-center text-gray-500">{{ groupOf(newCode) || '—' }}</td>
+                <td class="td"><div class="flex justify-center gap-2">
+                  <button type="button" class="icon-btn-save" [disabled]="saving()" (click)="confirmAdd()" aria-label="حفظ"><app-icon name="check" [size]="16" /></button>
+                  <button type="button" class="icon-btn-cancel" (click)="adding.set(false)" aria-label="إلغاء"><app-icon name="close" [size]="16" /></button>
+                </div></td>
+              </tr>
+            }
             @for (i of view(); track i.code) {
               <tr>
                 <td class="td font-bold text-navy">{{ i.code }}</td><td class="td">{{ i.name }}</td>
@@ -67,7 +83,26 @@ export class ItemAllocationTable {
 
   constructor() {
     effect(() => { if (!this.key() && this.options().length) this.key.set(this.options()[0]); });
-    effect((onCleanup) => { const k = this.key(); if (!k) return; const sub = this.svc.allocatedCodes(this.kind(), k).subscribe((c) => this.codes.set(new Set(c))); onCleanup(() => sub.unsubscribe()); });
+    effect((onCleanup) => { const k = this.key(); this.adding.set(false); if (!k) return; const sub = this.svc.allocatedCodes(this.kind(), k).subscribe((c) => this.codes.set(new Set(c))); onCleanup(() => sub.unsubscribe()); });
+  }
+  // ── «إضافة بند»: a blank row on top to pick an item that isn't allocated yet; saving allocates it right away.
+  protected readonly adding = signal(false);
+  protected newCode = '';
+  protected readonly unallocated = computed(() => this.items().filter((i) => !this.codes().has(i.code)));
+  groupOf(code: string) { return this.items().find((i) => i.code === code)?.group ?? ''; }
+  startAdd() {
+    if (!this.unallocated().length) { this.toast.error('كل البنود متخصصة بالفعل'); return; }
+    this.newCode = ''; this.adding.set(true);
+  }
+  confirmAdd() {
+    if (!this.newCode) { this.toast.error('برجاء اختيار البند'); return; }
+    const before = this.codes();
+    this.codes.set(new Set([...before, this.newCode]));
+    this.saving.set(true);
+    this.svc.saveAllocated(this.kind(), this.key(), [...this.codes()]).subscribe({
+      next: () => { this.saving.set(false); this.adding.set(false); this.toast.success('تمت إضافة البند'); },
+      error: () => { this.saving.set(false); this.codes.set(before); },
+    });
   }
   toggle(c: string) { this.codes.update((s) => { const n = new Set(s); n.has(c) ? n.delete(c) : n.add(c); return n; }); }
   toggleAll(on: boolean) { this.codes.update((s) => { const n = new Set(s); this.view().forEach((i) => (on ? n.add(i.code) : n.delete(i.code))); return n; }); }

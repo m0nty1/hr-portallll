@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { ApiService, Page, Query, pageOf } from '../../core/api/api.service';
 import * as M from './mock-data';
 import {
-  AllocationItem, EmployeeItem, EmployeeRate, IncentiveSheet, IncentiveSheetDetails, Installment, ItemDependency,
+  AllocationItem, EmployeeItem, EmployeeRate, IncentiveSheet, IncentiveSheetDetails, ItemDependency,
   NonStaffDisbursement, NonStaffLine, PayrollSummary, SalaryItem, SalaryItemGroup,
 } from './models';
 
@@ -34,9 +34,6 @@ export class SalariesService {
   allocatedCodes(kind: 'categories' | 'disbursements', key: string) { return this.api.get<string[]>(`/allocations/${kind}`, { key }, M.MOCK_ALLOCATED_CODES); }
   saveAllocated(kind: 'categories' | 'disbursements', key: string, codes: string[]) { return this.api.put(`/allocations/${kind}`, { key, codes }, {}); }
 
-  // ── Installments  /installments
-  installmentTypes() { return this.api.get<string[]>('/installments/types', undefined, M.MOCK_INSTALLMENT_TYPES); }
-  installments(q: Query) { return this.api.get<Page<Installment>>('/installments', q, () => pageOf(M.MOCK_INSTALLMENTS.filter((r) => !q['employee'] || r.name === q['employee']), +(q['page'] ?? 1), +(q['pageSize'] ?? 10))); }
 
   // ── Incentive sheets  /incentives
   incentiveSheets(q: Query) { return this.api.get<Page<IncentiveSheet>>('/incentives', q, () => pageOf(M.MOCK_INCENTIVE_SHEETS.filter((r) => !q['department'] || r.dept === q['department']), +(q['page'] ?? 1), +(q['pageSize'] ?? 10))); }

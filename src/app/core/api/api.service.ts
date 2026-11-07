@@ -31,6 +31,10 @@ export class ApiService {
     if (environment.useMock) return this.mock(mock);
     return this.http.put<T>(this.base + url, body);
   }
+  patch<T>(url: string, body: unknown, mock: T | (() => T)): Observable<T> {
+    if (environment.useMock) return this.mock(mock);
+    return this.http.patch<T>(this.base + url, body);
+  }
   delete<T = void>(url: string, mock?: T | (() => T)): Observable<T> {
     if (environment.useMock) return this.mock((mock ?? (undefined as T)) as T | (() => T));
     return this.http.delete<T>(this.base + url);

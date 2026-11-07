@@ -51,8 +51,8 @@ export const NAV: NavItem[] = [
       { label: 'إعدادات الموارد البشرية', to: '/settings/hr-config' },
       { label: 'إعدادات المرتبات والحوافز', to: '/settings' },
       { label: 'إعدادات النظام', to: '/settings/system' },
-      { label: 'مستخدمي النظام', to: '/settings/users' },
-      { label: 'صلاحيات المستخدمين', to: '/settings/permissions' },
+      { label: 'مستخدمو النظام', to: '/settings/users' },
+      { label: 'إعادة تعيين كلمة المرور', to: '/settings/reset-password' },
     ],
   },
 ];

@@ -39,7 +39,6 @@ export interface ItemDependency { code: string; name: string; type: ItemType; or
 export interface EmployeeItem { code: string; name: string; group: string; calculation: '' | 'قيمة' | 'نسبة'; value: string; active: boolean; allocated: boolean; }
 export interface AllocationItem { code: string; name: string; group: string; }
 
-export interface Installment { name: string; desc: string; value: string; from: string; count: string; total: string; notes: string; }
 export interface IncentiveSheet { id: number; payment: string; dept: string; date: string; notes: string; }
 export interface IncentiveLine { name: string; basic: string; abstract: string; duration: string; ratio: string; entitled: string; deductPct: string; total: string; insurance: string; tax: string; net: string; }
 export interface IncentiveSheetDetails { serial: string; date: string; department: string; payType: string; ratio: string; totalEntitled: string; totalNet: string; notes: string; lines: IncentiveLine[]; }

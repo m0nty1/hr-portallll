@@ -65,3 +65,29 @@ Types are in `src/app/shared/data/models.ts`; sample payloads = `mock-data.ts`.
 | GET / POST / PUT / DELETE | /settings/lookups/{slug}[/:code] | 21 lookup tables (screens 31/32). Row = named fields per table (see `cols[].key` in `src/app/shared/data/lookup-tables.ts`, e.g. banks → `{code,name,swiftCode}`, grades → `{code,name,rankCode,scaleStart,…}`). Rows are identified by `code` (tickets use `id`). Dates are ISO `yyyy-mm-dd`, booleans for checkbox columns. Slugs: banks, branches, sectors, engineering, cost-centers, departments, job-groups, jobs, job-status, hiring-types, grades, qualifications, installment-groups, installment-accounts, installment-types, tax-groups, bank-groups, disbursement-types, financial-constants, tickets, holidays |
 | GET | /settings/disbursement-groups · /settings/excel-groups · /settings/tax-groups | CodeName[] (27) |
 | GET / POST | /settings/periodic-allowance[/refresh] | `?from=&to=` (28) |
+
+## Added 07-11-2026
+
+### Installments (`src/app/shared/data/installments.service.ts`)
+| Method | URL | Notes |
+|---|---|---|
+| GET | /installments | filters: type, department, costCenter, employee, from, to (start date, ISO), cancelled=true, finished=true, page, pageSize → `Page<InstallmentPlan>` + `summary {total, paid, remaining}` over all matching, non-cancelled rows |
+| GET | /installments/types | string[] |
+| POST / PUT / DELETE | /installments · /installments/:id | `InstallmentPlan {id, employee, department, costCenter, type, total, count, start, paid, remaining, notes, cancelled}`; the server builds the monthly schedule and calculates paid/remaining |
+| POST | /installments/:id/cancel · /installments/:id/restore | cancel / restore a plan |
+| GET | /installments/:id | `{ plan, lines: [{no, due, amount, status: 'مسدد'\|'غير مسدد', paidOn, notes}] }` |
+| PUT / DELETE | /installments/:id/lines/:no | edit / delete one monthly line → returns the whole `{ plan, lines }` |
+
+### System users & permissions (`src/app/shared/data/users.service.ts`)
+| Method | URL | Notes |
+|---|---|---|
+| GET | /users | filters q, group, status (active\|suspended) → `SystemUser[] {id, name, username, group, sector, active, lastLogin}`; sector 'جميع القطاعات' = all sectors |
+| GET | /users/stats | `{total, active, suspended, groups}` |
+| POST / PUT / DELETE | /users · /users/:id | create / update / delete |
+| PATCH | /users/:id/status | `{active}` |
+| POST | /users/:id/reset-password | `{userId, newPassword, mustChange, endSessions}`; the password is never returned; log who reset it |
+| GET | /user-groups | `[{id, name, color, users, permissions}]`; permissions = `{ [section]: {view, add, edit, delete, print} }`, sections hr, salaries, attendance, reports (view, print only), settings |
+| POST | /user-groups | `{name}` |
+| PUT | /user-groups/:id/permissions | the permissions object above |
+
+The 8 permission keys sent at login (`permissions[]`) should be derived by the server from the user's group matrix.

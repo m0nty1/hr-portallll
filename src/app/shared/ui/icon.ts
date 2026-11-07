@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, ChevronUp, CircleAlert, CircleCheck, Clipboard, ClipboardList, Clock, CreditCard,
   Ellipsis, Eye, File, FileSpreadsheet, FileText, Folder, House, Info, LayoutGrid, List, Lock, LogOut,
   LucideAngularModule, LucideIconData, Mail, Menu, Percent, Plus, Printer, RotateCcw, Save, Search, Settings,
-  Shield, SquareCheck, SquarePen, Trash2, TrendingUp, TriangleAlert, Upload, User, UserPlus, Users, Wallet, X, Zap, Activity, Scale, MapPin, Download,
+  Shield, SquareCheck, SquarePen, Trash2, TrendingUp, TriangleAlert, Upload, User, UserPlus, Users, Wallet, X, Zap, Activity, Scale, KeyRound, EyeOff, Sparkles, MapPin, Download,
 } from 'lucide-angular';
 
 /** Every icon used in the portal, by kebab-case name. Add new ones here. */
@@ -17,7 +17,7 @@ export const ICONS = {
   info: Info, grid: LayoutGrid, list: List, lock: Lock, logout: LogOut, mail: Mail, menu: Menu, percent: Percent,
   plus: Plus, print: Printer, refresh: RotateCcw, save: Save, search: Search, settings: Settings, shield: Shield,
   'check-square': SquareCheck, edit: SquarePen, delete: Trash2, trend: TrendingUp, alert: TriangleAlert,
-  upload: Upload, user: User, 'user-plus': UserPlus, users: Users, wallet: Wallet, close: X, zap: Zap, activity: Activity, scale: Scale, 'map-pin': MapPin, download: Download,
+  upload: Upload, user: User, 'user-plus': UserPlus, users: Users, wallet: Wallet, close: X, zap: Zap, activity: Activity, scale: Scale, key: KeyRound, 'eye-off': EyeOff, sparkles: Sparkles, 'map-pin': MapPin, download: Download,
 } satisfies Record<string, LucideIconData>;
 
 export type IconName = keyof typeof ICONS;

@@ -41,6 +41,7 @@ export const routes: Routes = [
       { path: 'salaries/payroll', title: 'المرتب والبدلات', loadComponent: () => import('./features/salaries/salary-allowances').then((m) => m.SalaryAllowances) },
       { path: 'salaries/salary-slip', title: 'طباعة مفردات المرتب', loadComponent: () => import('./features/salaries/salary-slip-print').then((m) => m.SalarySlipPrint) },
       { path: 'salaries/installments', title: 'بيان الأقساط', loadComponent: () => import('./features/salaries/installments-statement').then((m) => m.InstallmentsStatement) },
+      { path: 'salaries/installments/:id', title: 'تفاصيل القسط', loadComponent: () => import('./features/salaries/installment-details').then((m) => m.InstallmentDetailsPage) },
       { path: 'salaries/incentives', title: 'كشوف حوافز', loadComponent: () => import('./features/salaries/incentives-search').then((m) => m.IncentivesSearch) },
       { path: 'salaries/incentives/:id', title: 'تفاصيل الصرفية', loadComponent: () => import('./features/salaries/incentive-details').then((m) => m.IncentiveDetails) },
       { path: 'salaries/non-staff', title: 'صرفيات غير العاملين', loadComponent: () => import('./features/salaries/non-staff-disbursements').then((m) => m.NonStaffDisbursements) },
@@ -68,6 +69,9 @@ export const routes: Routes = [
       // ── الإعدادات
       { path: 'settings', title: 'إعدادات المرتبات والحوافز', data: { group: 'salary', title: 'إعدادات المرتبات والحوافز' }, loadComponent: () => import('./features/settings/lookup-tabs.page').then((m) => m.LookupTabsPage) },
       { path: 'settings/hr-config', title: 'إعدادات الموارد البشرية', data: { group: 'hr', title: 'إعدادات الموارد البشرية' }, loadComponent: () => import('./features/settings/lookup-tabs.page').then((m) => m.LookupTabsPage) },
+      { path: 'settings/users', title: 'مستخدمو النظام', loadComponent: () => import('./features/settings/system-users').then((m) => m.SystemUsers) },
+      { path: 'settings/permissions', redirectTo: 'settings/users?tab=groups' },
+      { path: 'settings/reset-password', title: 'إعادة تعيين كلمة المرور', loadComponent: () => import('./features/settings/reset-password').then((m) => m.ResetPassword) },
       { path: 'settings/system', title: 'إعدادات النظام', loadComponent: () => import('./features/settings/settings-hub').then((m) => m.SettingsHub) },
       { path: 'settings/disbursement-groups', title: 'مجموعات الصرفيات', loadComponent: () => import('./features/settings/settings-disbursement-groups').then((m) => m.SettingsDisbursementGroups) },
       { path: 'settings/periodic-allowance', title: 'نسبة العلاوة الدورية', loadComponent: () => import('./features/settings/settings-periodic-allowance').then((m) => m.SettingsPeriodicAllowance) },

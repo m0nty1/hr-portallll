@@ -1,7 +1,7 @@
 /* Mock data copied from the approved prototype. Used only while environment.useMock = true. */
 import {
   AbsenceRow, AllocationItem, Bank, CodeName, CostCenter, Department, Employee, EmployeeItem, EmployeeProfile,
-  EmployeeRate, ExcelGroup, HomeStats, IncentiveSheet, IncentiveSheetDetails, Installment, ItemDependency, LeaveBalanceRow, Lookups,
+  EmployeeRate, ExcelGroup, HomeStats, IncentiveSheet, IncentiveSheetDetails, ItemDependency, LeaveBalanceRow, Lookups,
   NonStaffDisbursement, NonStaffLine, PayrollSummary, PenaltyRow, PeriodicAllowanceRow, SalaryItem, SalaryItemGroup,
   SalaryVariables,
 } from './models';
@@ -121,12 +121,6 @@ export const MOCK_ALLOCATION_ITEMS: AllocationItem[] = MOCK_EMPLOYEE_ITEMS.map((
 export const MOCK_ALLOCATED_CODES = ['SAL-100', 'SAL-110', 'SAL-120', 'SAL-210'];
 export const MOCK_ALLOCATION_EMPLOYEES = ['EMP-1024 — أحمد محمد علي', 'EMP-1025 — سارة محمود حسن', 'EMP-1026 — محمد إبراهيم أحمد', 'EMP-1027 — منى أحمد يوسف'];
 
-export const MOCK_INSTALLMENTS: Installment[] = [
-  { name: 'أحمد سالم عبد العال سليم', desc: 'جمعية المساعدات الاجتماعية (اقساط مصب)', value: '475', from: '2018-07-10', count: '4', total: '1900.00', notes: '—' },
-  { name: 'أحمد زكريا محمد علي', desc: 'قرض بنك مصر', value: '320', from: '2024-01-01', count: '12', total: '3840.00', notes: 'جارٍ السداد' },
-  { name: 'محمد علي حسن', desc: 'سلفة مؤقتة', value: '200', from: '2024-03-15', count: '6', total: '1200.00', notes: '—' },
-];
-export const MOCK_INSTALLMENT_TYPES = ['جمعية المساعدات الاجتماعية', 'قرض بنك مصر', 'سلفة مؤقتة', 'نقابة'];
 
 const P = 'بدل لجنة الفصل في التظلمات من الادارة العليا', D1 = 'ضاع مجلس الادارة والادارة العليا', D2 = 'المنتدب واعضاء مجلس الادارة';
 export const MOCK_INCENTIVE_SHEETS: IncentiveSheet[] = [
